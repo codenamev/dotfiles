@@ -1,0 +1,23 @@
+[color]
+  ui = auto
+[core]
+  editor = vi
+  excludesfile = ~/.gitignore
+[pack]
+  threads = 0
+[diff]
+  renamelimit = 0
+[gist]
+  private = yes
+[web]
+  browser = open
+[alias]
+  co = checkout
+  ci = commit
+  st = status
+  br = branch
+  hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+  type = cat-file -t
+  dump = cat-file -p
+[rerere]
+  enabled = 1
