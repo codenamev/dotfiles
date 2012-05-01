@@ -1,3 +1,10 @@
+# vim
+alias vi="vim -v --noplugin"
+alias v="vim"
+
+# git
+alias git-daily-log='git log -p --no-merges --author="Valentino" --since="1 day ago" --reverse --oneline -s'
+
 # ruby/rails
 alias tf="ruby_test functional"
 alias tu="ruby_test unit"
@@ -17,9 +24,45 @@ alias ...="cd ../.."
 alias ....="cd ../../.."
 alias o=$EDITOR
 alias dotf="cd $HOME/.dotfiles"
+# alternative to rename command
+#   usage: mmv photo_*.tiff photo_*.tif
+alias mmv='noglob zmv -W'
+autoload -U zmv
+
+# Fun pow stuff
+alias powprod='echo export RAILS_ENV=production > .powenv && touch tmp/restart.txt'
+alias kaput='launchctl unload ~/Library/LaunchAgents/cx.pow.powd.plist'
+alias kabam='launchctl unload ~/Library/LaunchAgents/cx.pow.powd.plist && launchctl load ~/Library/LaunchAgents/cx.pow.powd.plist'
+alias kazam='curl get.pow.cx/uninstall.sh | sh && sleep 5 && curl get.pow.cx | sh'
+alias powdown='mkdir -p ~/tmp/resolver && sudo mv /etc/resolver/* ~/tmp/resolver/'
+alias powup='sudo mv ~/tmp/resolver/* /etc/resolver/'
+export POW_EXT_DOMAINS=dev
+
+# Apache stuff
+alias apacher='sudo apachectl restart'
+
+# Testing
+alias cuc='bundle exec cucumber -f pretty'
+
+# NGINX stuff
+export PATH=/usr/local/sbin:$PATH
+alias nginxup='launchctl load -w ~/Library/LaunchAgents/org.nginx.nginx.plist'
+alias nginxdown='launchctl unload -w ~/Library/LaunchAgents/org.nginx.nginx.plist'
+
+# Load up vim bindings for moving around the line in the console
+bindkey -v
+
+# Tmuxinator
+alias fucktmux='pkill -USR1 tmux'
+alias muxup='tmux attach-session -t'
+export EDITOR='vim'
+[[ -s $HOME/.tmuxinator/scripts/tmuxinator ]] && source $HOME/.tmuxinator/scripts/tmuxinator
+# autocomplete for tmux
+#source ~/.rvm/gems/ruby-1.8.7-p352/gems/tmuxinator-0.5.0/bin/tmuxinator_completion
 
 # services
-alias nick="mplayer ~/Music/Theme\ Music/528491.wav > /dev/null 2>&1"
+#alias nick="mplayer ~/Music/Theme\ Music/528491.wav > /dev/null 2>&1"
 
 # misc.
 alias timestamp="date +%Y%m%d%H%M%S"
+

@@ -8,3 +8,4 @@ done
 
 source $HOME/.aliasrc
 source $HOME/.zsh_profile.d/rvm
+source $HOME/.functions
