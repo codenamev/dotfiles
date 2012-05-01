@@ -1,0 +1,30 @@
+# Custom functions
+function swap()
+{
+  local TMPFILE=tmp.$$
+  mv "$1" $TMPFILE
+  mv "$2" "$1"
+  mv $TMPFILE "$2"
+}
+
+function speak()
+{
+  ~/send_message_to_reenhanced.rb "$1"
+}
+
+function lastchange()
+{
+  if [ "$1" != "" ]; then
+    if [ "$2" != "" ]; then
+      if [ "$3" != "" ]; then
+        find "$1" -type f -mtime $2 -exec ls -al {} \; | head -$3
+      else
+        echo "usage: latestchange [path_to_search] [number_of_days_to_look_to] [number_of_files_to_show]"
+      fi
+    else
+      echo "usage: latestchange [path_to_search] [number_of_days_to_look_to] [number_of_files_to_show]"
+    fi
+  else
+    echo "usage: latestchange [path_to_search] [number_of_days_to_look_to] [number_of_files_to_show]"
+  fi
+}
