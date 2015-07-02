@@ -8,6 +8,9 @@ git_prompt_info() {
 setopt promptsubst
 export PS2='${SSH_CONNECTION+"%{$fg_bold[green]%}%n@%m:"}%{$fg_bold[blue]%}%c%{$reset_color%}$(git_prompt_info) %# '
 
+# load zmv for our mmv function
+autoload -U zmv
+
 # load our own completion functions
 fpath=(~/.zsh/completion /usr/local/share/zsh/site-functions $fpath)
 
