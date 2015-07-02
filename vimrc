@@ -1,14 +1,15 @@
 set encoding=utf-8
 
 " Leader
-let mapleader = " "
+"let mapleader = " "
 
-set backspace=2   " Backspace deletes like most programs in insert mode
+set backspace=eol,start,indent   " Backspace deletes like most programs in insert mode
 set nobackup
 set nowritebackup
 set noswapfile    " http://robots.thoughtbot.com/post/18739402579/global-gitignore#comment-458413287
-set history=50
+set history=1000
 set ruler         " show the cursor position all the time
+set cursorline
 set showcmd       " display incomplete commands
 set incsearch     " do incremental searching
 set laststatus=2  " Always display the status line
@@ -16,10 +17,24 @@ set autowrite     " Automatically :write before running commands
 set modelines=0   " Disable modelines as a security precaution
 set nomodeline
 
+" Undo
+set undolevels=10000
+if has("persistent_undo")
+  set undodir=~/.vim/undo " Allow undos to persist even after a file is closed
+  set undofile
+endif
+
 " Switch syntax highlighting on, when the terminal has colors
 " Also switch on highlighting the last used search pattern.
 if (&t_Co > 2 || has("gui_running")) && !exists("syntax_on")
   syntax on
+endif
+
+" Setup colors and colorscheme
+if $TERM =~ '256color'
+  set t_Co=256
+elseif $TERM =~ '^xterm$'
+  set t_Co=256
 endif
 
 if filereadable(expand("~/.vimrc.bundles"))
@@ -103,7 +118,7 @@ endif
 
 " Make it obvious where 80 characters is
 set textwidth=80
-set colorcolumn=+1
+set colorcolumn=116 " Set to min-width of GitHub diff panel
 
 " Numbers
 set number
@@ -152,6 +167,8 @@ set tags^=.git/tags
 " Open new split panes to right and bottom, which feels more natural
 set splitbelow
 set splitright
+nnoremap _ :split<cr>
+nnoremap \| :vsplit<cr>
 
 " Quicker window movement
 nnoremap <C-j> <C-w>j
@@ -165,6 +182,19 @@ nnoremap [r :ALEPreviousWrap<CR>
 
 " Map Ctrl + p to open fuzzy find (FZF)
 nnoremap <c-p> :Files<cr>
+
+" Make F5 and F6 magic white space scrubbers
+nnoremap <silent> <F5> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar>:nohl<CR>
+nnoremap <silent> <F6> :retab<CR>
+
+" Tabularize shortcuts
+noremap \= :Tabularize /=<CR>
+noremap \: :Tabularize /^[^:]*:\zs/l0l1<CR>
+noremap \> :Tabularize /=><CR>
+noremap \, :Tabularize /,\zs/l0l1<CR>
+noremap \{ :Tabularize /{<CR>
+noremap \\| :Tabularize /\|<CR>
+noremap \& :Tabularize /\(&\\|\\\\\)<CR>
 
 " Set spellfile to location that is guaranteed to exist, can be symlinked to
 " Dropbox or kept in Git and managed outside of thoughtbot/dotfiles using rcm.
