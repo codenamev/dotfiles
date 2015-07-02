@@ -26,3 +26,8 @@
   path = ~/.gitconfig.local
 [diff]
   colorMoved = zebra
+[github]
+	site = https://github.com
+	endpoint = https://api.github.com
+[reflow]
+	git-server = GitHub
