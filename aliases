@@ -6,6 +6,7 @@ alias mkdir="mkdir -p"
 alias e="$EDITOR"
 alias v="$VISUAL"
 alias vi="vim -v --noplugin"
+alias truncate=": >"
 
 # Bundler
 alias b="bundle"
@@ -14,10 +15,14 @@ alias be="bundle exec"
 # Rails
 alias migrate="rake db:migrate db:rollback && rake db:migrate"
 alias s="rspec"
-alias cuc='bundle exec cucumber -f pretty --color'
+alias cuc='RAILS_ENV=test bundle exec cucumber -f pretty --color'
 
 # Pretty print the path
 alias path='echo $PATH | tr -s ":" "\n"'
 
 # Include custom aliases
 [[ -f ~/.aliases.local ]] && source ~/.aliases.local
+
+# Migrane solvents
+# clear idiotic hidden OS X file attributes for downloaded files
+alias fuckxattr='xattr -c -r'
