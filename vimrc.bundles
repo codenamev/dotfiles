@@ -42,8 +42,8 @@ Plug 'tpope/vim-rails'
 Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-surround'
 Plug 'vim-ruby/vim-ruby'
-Plug 'vim-scripts/tComment'
 Plug 'vim-scripts/vim-auto-save'
+Plug 'vim-scripts/tComment'
 Plug 'godlygeek/tabular'
 
 if filereadable(expand("~/.vimrc.bundles.local"))
