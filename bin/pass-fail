@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+#
+# Usage: set any of the following environment variables to get run before
+# tests or after success/failure
+#   
+#  PASS_FAIL_INIT_COMMAND - is run before tests run
+#  PASS_COMMAND - is run after tests if they all pass
+#  FAIL_COMMAND - is run after tests if there are any failrues
+
 set -e
 
 if [ -n "$PASS_FAIL_INIT_COMMAND" ]; then
@@ -6,12 +14,12 @@ if [ -n "$PASS_FAIL_INIT_COMMAND" ]; then
 fi
 
 if [ -z "$PASS_COMMAND" ]; then
-  echo "PASS_COMMAND must be set"
+  echo "Usage: set the PASS_COMMAND env variable to a command to be run upon success"
   exit 1
 fi
 
 if [ -z "$FAIL_COMMAND" ]; then
-  echo "FAIL_COMMAND must be set"
+  echo "Usage: set the FAIL_COMMAND env variable to a command to be run upon failure"
   exit 1
 fi
 
