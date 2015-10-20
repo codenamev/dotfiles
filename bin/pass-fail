@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -e
+
+if [ -n "$PASS_FAIL_INIT_COMMAND" ]; then
+  $PASS_FAIL_INIT_COMMAND
+fi
+
+if [ -z "$PASS_COMMAND" ]; then
+  echo "PASS_COMMAND must be set"
+  exit 1
+fi
+
+if [ -z "$FAIL_COMMAND" ]; then
+  echo "FAIL_COMMAND must be set"
+  exit 1
+fi
+
+$@ && $PASS_COMMAND || $FAIL_COMMAND

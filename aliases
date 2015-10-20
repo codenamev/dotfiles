@@ -14,8 +14,8 @@ alias be="bundle exec"
 
 # Rails
 alias migrate="rake db:migrate db:rollback && rake db:migrate"
-alias s="rspec"
-alias cuc='RAILS_ENV=test bundle exec cucumber -f pretty --color'
+alias s="pass-fail rspec"
+alias cuc='RAILS_ENV=test pass-fail bundle exec cucumber -f pretty --color'
 
 # Pretty print the path
 alias path='echo $PATH | tr -s ":" "\n"'
