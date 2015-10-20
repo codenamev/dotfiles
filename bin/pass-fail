@@ -9,18 +9,20 @@
 
 set -e
 
-if [ -n "$PASS_FAIL_INIT_COMMAND" ]; then
-  $PASS_FAIL_INIT_COMMAND
+init_command="$PASS_FAIL_INIT_COMMAND"
+pass_command="$PASS_COMMAND"
+fail_command="$FAIL_COMMAND"
+
+if [ -n "$init_command" ]; then
+  $init_command
 fi
 
-if [ -z "$PASS_COMMAND" ]; then
-  echo "Usage: set the PASS_COMMAND env variable to a command to be run upon success"
-  exit 1
+if [ -z "$pass_command" ]; then
+  pass_command="exit 1"
 fi
 
-if [ -z "$FAIL_COMMAND" ]; then
-  echo "Usage: set the FAIL_COMMAND env variable to a command to be run upon failure"
-  exit 1
+if [ -z "$fail_command" ]; then
+  fail_command="exit 1"
 fi
 
-$@ && $PASS_COMMAND || $FAIL_COMMAND
+$@ && $pass_command || $fail_command
