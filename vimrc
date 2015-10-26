@@ -70,6 +70,22 @@ augroup vimrcEx
   autocmd BufRead,BufNewFile gitconfig.local set filetype=gitconfig
   autocmd BufRead,BufNewFile tmux.conf.local set filetype=tmux
   autocmd BufRead,BufNewFile vimrc.local set filetype=vim
+
+  " Enable spellchecking for Markdown
+  autocmd FileType markdown setlocal spell
+
+  " Automatically wrap at 80 characters for Markdown
+  autocmd BufRead,BufNewFile *.md setlocal textwidth=80
+
+  " Automatically wrap at 72 characters and spell check git commit messages
+  autocmd FileType gitcommit setlocal textwidth=72
+  autocmd FileType gitcommit setlocal spell
+
+  " Allow stylesheets to autocomplete hyphenated words
+  autocmd FileType css,scss,sass setlocal iskeyword+=-
+
+  " Auto-save files on update (add CursorHoldI for insert-mode activation)
+  autocmd CursorHold * update
 augroup END
 
 " ALE linting events
