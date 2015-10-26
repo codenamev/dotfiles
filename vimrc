@@ -71,6 +71,9 @@ augroup vimrcEx
 
   " Allow stylesheets to autocomplete hyphenated words
   autocmd FileType css,scss,sass setlocal iskeyword+=-
+
+  " Auto-save files on update (add CursorHoldI for insert-mode activation)
+  autocmd CursorHold * update
 augroup END
 
 " Softtabs, 2 spaces
