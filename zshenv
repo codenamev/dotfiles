@@ -17,10 +17,6 @@ fi
 # load homebrew if available
 if type /usr/local/bin/brew &>/dev/null ; then
   export PATH="/usr/local/bin:/usr/local/sbin:$PATH"
-  # load php-version if available
-  if [ -f $(brew --prefix php-version)/php-version.sh ]; then
-    source $(brew --prefix php-version)/php-version.sh && php-version 5
-  fi
 fi
 
 
