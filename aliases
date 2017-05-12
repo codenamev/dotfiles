@@ -8,6 +8,12 @@ alias v="$VISUAL"
 alias vi="vim -v --noplugin"
 alias truncate=": >"
 
+# Support for Hub
+# https://hub.github.com/
+if type "hub" > /dev/null; then
+  alias git=hub
+fi
+
 # Bundler
 alias b="bundle"
 alias be="bundle exec"

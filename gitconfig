@@ -18,7 +18,7 @@
   st = status -sb
 [core]
   excludesfile = ~/.gitignore
-  autocrlf = input
+	autocrlf = input
 [commit]
   template = ~/.gitmessage
 [fetch]
@@ -29,3 +29,5 @@
   path = ~/.gitconfig.local
 [diff]
   colorMoved = zebra
+[merge]
+  ff = only
