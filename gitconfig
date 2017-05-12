@@ -19,7 +19,7 @@
   st = status -sb
 [core]
   excludesfile = ~/.gitignore
-  autocrlf = input
+	autocrlf = input
 [commit]
   template = ~/.gitmessage
 [fetch]
@@ -28,6 +28,7 @@
   autosquash = true
 [include]
   path = ~/.gitconfig.local
+  path = /Users/codenamev/.gitconfig.reflow
 [diff]
   colorMoved = zebra
 [github]
@@ -37,3 +38,5 @@
 	clean = git-lfs clean %f
 	smudge = git-lfs smudge %f
 	required = true
+[merge]
+  ff = only
