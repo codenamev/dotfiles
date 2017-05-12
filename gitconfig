@@ -17,7 +17,7 @@
   st = status
 [core]
   excludesfile = ~/.gitignore
-  autocrlf = input
+	autocrlf = input
 [commit]
   template = ~/.gitmessage
 [fetch]
@@ -26,6 +26,7 @@
   autosquash = true
 [include]
   path = ~/.gitconfig.local
+	path = /Users/codenamev/.gitconfig.reflow
 [github]
 	site = https://github.com
 	endpoint = https://api.github.com
@@ -33,3 +34,5 @@
 	clean = git-lfs clean %f
 	smudge = git-lfs smudge %f
 	required = true
+[merge]
+  ff = only

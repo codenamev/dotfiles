@@ -17,6 +17,11 @@ if type /usr/local/bin/brew &>/dev/null ; then
   export PATH="/usr/local/bin:/usr/local/sbin:$PATH"
 fi
 
+# add yarn if available
+if type yarn &>/dev/null ; then
+  export PATH="$PATH:`yarn global bin`"
+fi
+
 local _old_path="$PATH"
 
 # Local config

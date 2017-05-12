@@ -8,6 +8,12 @@ alias v="$VISUAL"
 alias vi="vim -v --noplugin"
 alias truncate=": >"
 
+# Support for Hub
+# https://hub.github.com/
+if type "hub" > /dev/null; then
+  alias git=hub
+fi
+
 # Bundler
 alias b="bundle"
 alias be="bundle exec"
@@ -16,6 +22,8 @@ alias be="bundle exec"
 alias migrate="rake db:migrate db:rollback && rake db:migrate"
 alias s="pass-fail rspec"
 alias cuc='RAILS_ENV=test pass-fail bundle exec cucumber -f pretty --color'
+alias sprec='bundle exec spring rspec'
+alias sprake= 'bundle exec spring rake'
 
 # Pretty print the path
 alias path='echo $PATH | tr -s ":" "\n"'
