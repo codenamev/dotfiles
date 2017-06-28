@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Usage: find-ruby-class-source [name of class]
+#
+# Finds the first file containing the given string
+
+if [ "$1" != "" ]; then
+  if [ "$2" != "" ]; then
+    ag -r -m 1 -l "\bclass $1\b" --silent --nocolor $2
+  else
+    ag -r -m 1 -l "\bclass $1\b" --silent --nocolor .
+  fi
+else
+  echo "usage: find-definition [string]"
+fi
