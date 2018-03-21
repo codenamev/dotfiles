@@ -5,3 +5,8 @@ tags
 /node_modules/
 /tmp
 /vendor
+*.dll.js*
+/src/dox_assets/
+/spec/fake*
+/config/spunkt_params
+apiary.apib
