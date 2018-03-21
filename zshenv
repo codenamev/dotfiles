@@ -22,6 +22,11 @@ if type yarn &>/dev/null ; then
   export PATH="$PATH:`yarn global bin`"
 fi
 
+# add go if available
+if type go &>/dev/null ; then
+  export PATH="$PATH:$HOME/go/bin"
+fi
+
 local _old_path="$PATH"
 
 # Local config
