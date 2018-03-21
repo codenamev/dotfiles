@@ -46,6 +46,10 @@ Plug 'vim-ruby/vim-ruby'
 Plug 'vim-scripts/tComment'
 Plug 'godlygeek/tabular'
 Plug 'mxw/vim-jsx'
+Plug 'posva/vim-vue'
+Plug 'junkblocker/patchreview-vim'
+Plug 'codegram/vim-codereview'
+Plug 'benmills/vimux'
 
 if g:has_async
   Plug 'dense-analysis/ale'
