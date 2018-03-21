@@ -1,0 +1,35 @@
+#!/bin/bash
+
+git checkout master
+git fetch
+git remote prune origin
+git branch --merged master | grep -v 'master$' | xargs git branch -d
+
+REMOVABLE=`git branch -r --merged master | sed 's/ *origin\///' | grep -v 'master$' | grep -v 'production$'`
+
+if [[ "$REMOVABLE" ]]; then
+  echo "The following remote branches are fully merged and will be removed:"
+  for branch in $REMOVABLE; do
+    echo $branch
+  done
+
+  read -p "Continue (y/n)? " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo $REMOVABLE | xargs git push origin --delete
+  fi
+fi
+
+BRANCHES=`git branch | grep -v 'master$' | grep -v 'production$'`
+echo "The following branches are still on your system, let's go over them:"
+
+echo $BRANCHES
+
+for branch in $BRANCHES; do
+  read -p "Do you wish to remove '$branch' (y/n)?" yn
+  case $yn in
+    [Yy]* ) git branch -D $branch; continue;;
+    [Nn]* ) continue;;
+    * ) echo "Please answer yes or no.";;
+  esac
+done
