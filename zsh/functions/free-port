@@ -1,0 +1,7 @@
+free-port() {
+  if [[ $# -gt 0 ]]; then
+    kill "$(lsof -t -i :$1)"
+  else
+    echo "Usage: free-port <port-number>"
+  fi
+}
