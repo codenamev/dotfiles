@@ -59,6 +59,10 @@ Plug 'vim-ruby/vim-ruby'
 Plug 'vim-scripts/tComment'
 Plug 'godlygeek/tabular'
 Plug 'mxw/vim-jsx'
+Plug 'posva/vim-vue'
+Plug 'junkblocker/patchreview-vim'
+Plug 'codegram/vim-codereview'
+Plug 'benmills/vimux'
 
 if filereadable(expand("~/.vimrc.bundles.local"))
   source ~/.vimrc.bundles.local

@@ -184,6 +184,12 @@ set complete+=kspell
 " Always use vertical diffs
 set diffopt+=vertical
 
+" Setup shortcuts for vimux
+ " Run the current file with ruby
+ map <Leader>rb :call VimuxRunCommand("clear; bundle exec ruby " . expand("%"))<CR>
+ " Run the current file with rspec
+ map <Leader>rs :call VimuxRunCommand("clear; rspec " . bufname("%"))<CR>
+
 " Local config
 if filereadable($HOME . "/.vimrc.local")
   source ~/.vimrc.local
