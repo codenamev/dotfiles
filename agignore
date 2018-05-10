@@ -8,5 +8,6 @@ tags
 *.dll.js*
 /src/dox_assets/
 /spec/fake*
+/spec/services/captions/sources/downsub_spec.rb
 /config/spunkt_params
 apiary.apib

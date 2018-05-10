@@ -25,6 +25,7 @@ fi
 # add go if available
 if type go &>/dev/null ; then
   export PATH="$PATH:$HOME/go/bin"
+  export GOPATH=$(go env GOPATH)
 fi
 
 local _old_path="$PATH"
