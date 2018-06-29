@@ -1,5 +1,5 @@
 [init]
-  defaultBranch = main
+defaultBranch = main
   templatedir = ~/.git_template
 [rerere]
   enabled = 1
@@ -28,7 +28,7 @@
   autosquash = true
 [include]
   path = ~/.gitconfig.local
-  path = /Users/codenamev/.gitconfig.reflow
+	path = /Users/codenamev/.gitconfig.reflow
 [diff]
   colorMoved = zebra
 [github]
