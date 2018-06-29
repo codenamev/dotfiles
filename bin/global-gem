@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+eval "$(rbenv init -)"
+if [ "$1" != "" ]; then
+  for v in $(rbenv versions --bare); do
+    echo "-----> Running 'gem $@' for $v";
+    rbenv shell $v;
+    gem $@;
+  done
+else
+  echo "usage: global-gem install gem_name"
+fi
