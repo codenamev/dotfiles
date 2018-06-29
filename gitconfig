@@ -27,6 +27,8 @@
 [include]
   path = ~/.gitconfig.local
 	path = /Users/codenamev/.gitconfig.reflow
+[diff]
+  colorMoved = zebra
 [github]
 	site = https://github.com
 	endpoint = https://api.github.com
