@@ -85,6 +85,7 @@ augroup ale
     autocmd CursorHoldI * call ale#Queue(0)
     autocmd InsertEnter * call ale#Queue(0)
     autocmd InsertLeave * call ale#Queue(0)
+    autocmd BufRead,BufNewFile *.{rb,js,vue} exe "highlight ALEWarning ctermbg=DarkMagenta"
   else
     echoerr "The thoughtbot dotfiles require NeoVim or Vim 8"
   endif
@@ -113,6 +114,8 @@ if executable('ag')
 
   " Use ag in fzf for listing files. Lightning fast and respects .gitignore
   let $FZF_DEFAULT_COMMAND = 'ag --literal --files-with-matches --nocolor --hidden -g ""'
+  " Use ag in CtrlP for listing files. Lightning fast and respects .gitignore
+  let g:ctrlp_user_command = 'ag --literal --files-with-matches --nocolor --hidden -g "" %s'
 
   nnoremap \ :Ag<SPACE>
 endif
@@ -191,20 +194,9 @@ noremap \{ :Tabularize /{<CR>
 noremap \\| :Tabularize /\|<CR>
 noremap \& :Tabularize /\(&\\|\\\\\)<CR>
 
-" CUSTOM
-" configure syntastic syntax checking to check on open as well as save
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open=1
-let g:syntastic_check_on_wq = 0
-let g:syntastic_html_tidy_ignore_errors=[" proprietary attribute \"ng-"]
-let g:syntastic_eruby_ruby_quiet_messages =
-    \ {"regex": "possibly useless use of a variable in void context"}
-" END CUSTOM
-
 " configure syntastic with eslint
-let g:jsx_ext_required = 0 " Allow JSX in normal JS files
-let g:syntastic_javascript_checkers = ['eslint']
+"let g:jsx_ext_required = 0 " Allow JSX in normal JS files
+"let g:syntastic_javascript_checkers = ['eslint']
 
 " Set spellfile to location that is guaranteed to exist, can be symlinked to
 " Dropbox or kept in Git and managed outside of thoughtbot/dotfiles using rcm.

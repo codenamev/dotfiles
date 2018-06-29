@@ -35,17 +35,17 @@ Plug 'ctrlpvim/ctrlp.vim'
 Plug 'fatih/vim-go'
 Plug 'slim-template/vim-slim'
 Plug 'tpope/vim-bundler'
-"Plug 'tpope/vim-endwise'
-"Plug 'tpope/vim-eunuch'
 Plug 'tpope/vim-fugitive'
-"Plug 'tpope/vim-projectionist'
-"Plug 'tpope/vim-rails'
 Plug 'tpope/vim-rake'
 Plug 'tpope/vim-repeat'
-"Plug 'tpope/vim-rhubarb'
 Plug 'tpope/vim-surround'
 Plug 'vim-ruby/vim-ruby'
 Plug 'vim-scripts/tComment'
+
+if g:has_async
+  Plug 'w0rp/ale'
+endif
+
 Plug 'godlygeek/tabular'
 Plug 'mxw/vim-jsx'
 Plug 'posva/vim-vue'
@@ -56,8 +56,6 @@ Plug 'benmills/vimux'
 Plug 'SirVer/ultisnips'
 " Snippets are separated from the engine. Add this if you want them:
 Plug 'honza/vim-snippets'
-" Completion
-Plug 'Valloric/YouCompleteMe'
 
 if g:has_async
   Plug 'dense-analysis/ale'
