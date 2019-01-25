@@ -104,7 +104,7 @@ if executable('ag')
 
   if !exists(":Ag")
     command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
-    nnoremap \ :Ag<SPACE>
+    nnoremap <silent> <Leader>ag :Ag<SPACE>
   endif
 endif
 
