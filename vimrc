@@ -1,3 +1,5 @@
+set encoding=utf-8
+
 " Leader
 "let mapleader = " "
 
@@ -57,22 +59,29 @@ augroup vimrcEx
     \ endif
 
   " Set syntax highlighting for specific file types
-  autocmd BufRead,BufNewFile Appraisals set filetype=ruby
   autocmd BufRead,BufNewFile *.md set filetype=markdown
   autocmd BufRead,BufNewFile .{jscs,jshint,eslint}rc set filetype=json
+  autocmd BufRead,BufNewFile aliases.local,zshrc.local,*/zsh/configs/* set filetype=sh
+  autocmd BufRead,BufNewFile gitconfig.local set filetype=gitconfig
+  autocmd BufRead,BufNewFile tmux.conf.local set filetype=tmux
+  autocmd BufRead,BufNewFile vimrc.local set filetype=vim
+augroup END
 
-  " ALE linting events
+" ALE linting events
+augroup ale
+  autocmd!
+
   if g:has_async
-    set updatetime=1000
-    let g:ale_lint_on_text_changed = 0
-    autocmd CursorHold * call ale#Lint()
-    autocmd CursorHoldI * call ale#Lint()
-    autocmd InsertEnter * call ale#Lint()
-    autocmd InsertLeave * call ale#Lint()
-    autocmd BufRead,BufNewFile *.{rb,js,vue} exe "highlight ALEWarning ctermbg=DarkMagenta"
+    autocmd VimEnter *
+      \ set updatetime=1000 |
+      \ let g:ale_lint_on_text_changed = 0
+    autocmd CursorHold * call ale#Queue(0)
+    autocmd CursorHoldI * call ale#Queue(0)
+    autocmd InsertEnter * call ale#Queue(0)
+    autocmd InsertLeave * call ale#Queue(0)
   else
-    echoerr "NeoVim or Vim 8 required"
-  end
+    echoerr "The thoughtbot dotfiles require NeoVim or Vim 8"
+  endif
 augroup END
 
 " When the type of shell script is /bin/sh, assume a POSIX-compatible
@@ -168,6 +177,7 @@ nnoremap <C-l> <C-w>l
 " Move between linting errors
 nnoremap ]r :ALENextWrap<CR>
 nnoremap [r :ALEPreviousWrap<CR>
+
 " Make F5 and F6 magic white space scrubbers
 nnoremap <silent> <F5> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar>:nohl<CR>
 nnoremap <silent> <F6> :retab<CR>

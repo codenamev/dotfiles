@@ -38,24 +38,29 @@ This command will create symlinks for config files in your home directory.
 Setting the `RCRC` environment variable tells `rcup` to use standard
 configuration options:
 
-* Exclude the `README.md` and `LICENSE` files, which are part of
+* Exclude the `README.md`, `README-ES.md` and `LICENSE` files, which are part of
   the `dotfiles` repository but do not need to be symlinked in.
 * Give precedence to personal overrides which by default are placed in
   `~/dotfiles-local`
 * Please configure the `rcrc` file if you'd like to make personal
   overrides in a different directory
 
-You can safely run `rcup` multiple times to update:
+
+Update
+------
+
+From time to time you should pull down any updates to these dotfiles, and run
 
     rcup
 
-You should run `rcup` after pulling a new version of the repository to symlink
-any new files in the repository.
+to link any new files and install new vim plugins. **Note** You _must_ run
+`rcup` after pulling to ensure that all files in plugins are properly installed,
+but you can safely run `rcup` multiple times so update early and update often!
 
 Make your own customizations
 ----------------------------
 
-Create a directory for your personal customizations: 
+Create a directory for your personal customizations:
 
     mkdir ~/dotfiles-local
 
@@ -176,7 +181,7 @@ What's in it?
 
 [vim](http://www.vim.org/) configuration:
 
-* [Ctrl-P](https://github.com/kien/ctrlp.vim) for fuzzy file/buffer/tag finding.
+* [Ctrl-P](https://github.com/ctrlpvim/ctrlp.vim) for fuzzy file/buffer/tag finding.
 * [Rails.vim](https://github.com/tpope/vim-rails) for enhanced navigation of
   Rails file structure via `gf` and `:A` (alternate), `:Rextract` partials,
   `:Rinvert` migrations, etc.
@@ -186,7 +191,7 @@ What's in it?
 * Syntax highlighting for Markdown, HTML, JavaScript, Ruby, Go, Elixir, more.
 * Use [Ag](https://github.com/ggreer/the_silver_searcher) instead of Grep when
   available.
-* Map `<leader>ct` to re-index [Exuberant Ctags](http://ctags.sourceforge.net/).
+* Map `<leader>ct` to re-index ctags.
 * Use [vim-mkdir](https://github.com/pbrisbin/vim-mkdir) for automatically
   creating non-existing directories before writing the buffer.
 * Use [vim-plug](https://github.com/junegunn/vim-plug) to manage plugins.
@@ -209,11 +214,12 @@ configuration:
 * Adds `post-{checkout,commit,merge}` hooks to re-index your ctags.
 * Adds `pre-commit` and `prepare-commit-msg` stubs that delegate to your local
   config.
+* Adds `trust-bin` alias to append a project's `bin/` directory to `$PATH`.
 
 [Ruby](https://www.ruby-lang.org/en/) configuration:
 
 * Add trusted binstubs to the `PATH`.
-* Load rbenv into the shell, adding shims onto our `PATH`.
+* Load the ASDF version manager.
 
 Shell aliases and scripts:
 
@@ -236,7 +242,7 @@ in this project.
 License
 -------
 
-dotfiles is copyright © 2009-2017 thoughtbot. It is free software, and may be
+dotfiles is copyright © 2009-2018 thoughtbot. It is free software, and may be
 redistributed under the terms specified in the [`LICENSE`] file.
 
 [`LICENSE`]: /LICENSE
