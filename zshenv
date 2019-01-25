@@ -15,6 +15,8 @@ fi
 # load homebrew if available
 if type /usr/local/bin/brew &>/dev/null ; then
   export PATH="/usr/local/bin:/usr/local/sbin:$PATH"
+  # Add homebrew completions
+  FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
 fi
 
 # add yarn if available
