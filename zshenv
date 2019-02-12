@@ -4,19 +4,19 @@ export SHELL=zsh
 # ensure dotfiles bin directory is loaded first
 export PATH="$HOME/.bin:$PATH"
 
+# load homebrew if available
+if type /usr/local/bin/brew &>/dev/null ; then
+  export PATH="/usr/local/bin:/usr/local/sbin:$PATH"
+  # Add homebrew completions
+  FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
+fi
+
 # load rbenv if available
 if type rbenv &>/dev/null ; then
   eval "$(rbenv init - --no-rehash)"
 elif type $HOME/.rvm/scripts/rvm &>/dev/null ; then
   export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
   [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
-fi
-
-# load homebrew if available
-if type /usr/local/bin/brew &>/dev/null ; then
-  export PATH="/usr/local/bin:/usr/local/sbin:$PATH"
-  # Add homebrew completions
-  FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
 fi
 
 # add yarn if available
