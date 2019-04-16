@@ -84,6 +84,12 @@ augroup ale
   endif
 augroup END
 
+augroup highlighters
+  autocmd!
+
+  autocmd FileType vue syntax sync fromstart
+augroup END
+
 " When the type of shell script is /bin/sh, assume a POSIX-compatible
 " shell for syntax highlighting purposes.
 let g:is_posix = 1
