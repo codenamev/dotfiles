@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+eval "$(rbenv init -)"
+for v in $(rbenv versions --bare); do
+  echo "-----> Running 'gem pristine --all' for $v";
+  rbenv shell $v;
+  gem pristine --all;
+done
