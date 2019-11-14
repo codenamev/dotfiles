@@ -34,3 +34,7 @@ alias path='echo $PATH | tr -s ":" "\n"'
 # Migrane solvents
 # clear idiotic hidden OS X file attributes for downloaded files
 alias fuckxattr='xattr -c -r'
+
+# Tmux helpers
+alias tmux-current-session-name="tmux display-message -p '#S'"
+alias tmux-last-pane-number="tmux list-panes -F '#P' | tail -n1"
