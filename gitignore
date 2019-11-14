@@ -3,12 +3,14 @@
 .DS_Store
 .bundle
 .byebug_history
-.env
+.env.local
 .git/
 /bower_components/
-/log
+/log/*
+!/log/.keep
 /node_modules/
-/tmp
+/tmp/*
+!/tmp/.keep
 db/*.sqlite3
 log/*.log
 rerun.txt
