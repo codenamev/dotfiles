@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Usage: ts bundle exec rspec
+#
+# Sends a command to a tmux pane
+
+args=$@
+tmux send-keys -t bottom-right "$args" C-m
