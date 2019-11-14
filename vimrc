@@ -1,7 +1,7 @@
 set encoding=utf-8
 
 " Leader
-"let mapleader = " "
+let mapleader = " "
 
 set backspace=eol,start,indent   " Backspace deletes like most programs in insert mode
 set nobackup
@@ -156,7 +156,7 @@ nnoremap <Up> :echoe "Use k"<CR>
 nnoremap <Down> :echoe "Use j"<CR>
 
 " vim-test mappings
-nnoremap <silent> <Leader>t :TestFile<CR>
+"nnoremap <silent> <Leader>t :TestFile<CR>
 nnoremap <silent> <Leader>s :TestNearest<CR>
 nnoremap <silent> <Leader>l :TestLast<CR>
 nnoremap <silent> <Leader>a :TestSuite<CR>
@@ -224,6 +224,51 @@ set diffopt+=vertical
  map <Leader>rb :call VimuxRunCommand("clear; bundle exec ruby " . expand("%"))<CR>
  " Run the current file with rspec
  map <Leader>rs :call VimuxRunCommand("clear; rspec " . bufname("%"))<CR>
+ map <silent> <Leader>rl :w<cr>:silent call RunCurrentLineInTest('!ts bundle exec rspec')<cr>:silent redraw!<cr>
+ map <silent> <Leader>rt :w<cr>:silent call RunCurrentTest('!ts bundle exec rspec')<cr>:silent redraw!<cr>
+
+" Test runner helpers
+function! RunCurrentTest(rspec_type)
+  let in_test_file = match(expand("%"), '\(.feature\|_spec.rb\|_test.rb\)$') != -1
+  if in_test_file
+    call SetTestFile()
+
+    if match(expand('%'), '\.feature$') != -1
+      call SetTestRunner("!bin/cucumber")
+      exec g:my_test_runner g:my_test_file
+    elseif match(expand('%'), '_spec\.rb$') != -1
+      call SetTestRunner(a:rspec_type)
+      exec g:my_test_runner g:my_test_file
+    else
+      call SetTestRunner(a:rspec_type)
+      exec g:my_test_runner g:my_test_file
+    endif
+  else
+    exec g:my_test_runner g:my_test_file
+  endif
+endfunction
+
+function! SetTestRunner(runner)
+  let g:my_test_runner=a:runner
+endfunction
+
+function! RunCurrentLineInTest(rspec_type)
+  let in_test_file = match(expand("%"), '\(.feature\|_spec.rb\|_test.rb\)$') != -1
+  if in_test_file
+    call SetTestFileWithLine()
+  end
+
+  exec a:rspec_type g:my_test_file . ":" . g:my_test_file_line
+endfunction
+
+function! SetTestFile()
+  let g:my_test_file=@%
+endfunction
+
+function! SetTestFileWithLine()
+  let g:my_test_file=@%
+  let g:my_test_file_line=line(".")
+endfunction
 
 " Local config
 if filereadable($HOME . "/.vimrc.local")
