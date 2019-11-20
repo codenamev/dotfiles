@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -e
+
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+git log master..$current_branch --format='%C(auto)%h %s %C(#999999)%ar' --color
