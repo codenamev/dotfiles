@@ -219,6 +219,9 @@ set complete+=kspell
 " Always use vertical diffs
 set diffopt+=vertical
 
+" Ensure git tags are setup properly
+:set tags^=./.git/tags;
+
 " Setup shortcuts for vimux
  " Run the current file with ruby
  map <Leader>rb :call VimuxRunCommand("clear; bundle exec ruby " . expand("%"))<CR>
