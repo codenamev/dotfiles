@@ -1,12 +1,32 @@
+#---------------------------------------------------
+# Alias for descriptive ls
+#---------------------------------------------------
+alias ll="ls -l"
+#alias ls="ls -hF" #add colors for filetype recognition
+alias la='ls -Al'       # show hidden files
+alias lx='ls -lxB'      # sort by extension
+alias lk='ls -Sr'       # sort by size, biggest last
+alias lc='ls -ltcr'     # sort by and show change time, most recent last
+alias lu='ls -ltur'     # sort by and show access time, most recent last
+alias lt='ls -ltr'      # sort by date, most recent last
+alias lm='ls -al |more' # pipe through 'more'
+alias lr='ls -lR'       # recursive ls
+alias l='colorls -lA --sd'
+
 # Unix
-alias ll="ls -al"
-alias la="ls -la"
 alias ln="ln -v"
 alias mkdir="mkdir -p"
 alias e="$EDITOR"
 alias v="$VISUAL"
 alias vi="vim -v --noplugin"
 alias truncate=": >"
+
+# git
+alias g='git'
+alias ga='git add'
+alias gaa='git add --all'
+alias gst="git status"
+alias gd="git diff"
 
 # Support for Hub
 # https://hub.github.com/
@@ -21,12 +41,16 @@ alias be="bundle exec"
 # Rails
 alias migrate="rake db:migrate db:rollback && rake db:migrate"
 alias s="pass-fail rspec"
+alias specy="pass-fail bundle exec rspec"
 alias cuc='RAILS_ENV=test pass-fail bundle exec cucumber -f pretty --color'
 alias sprec='bundle exec spring rspec'
 alias sprake= 'bundle exec spring rake'
 
 # Pretty print the path
 alias path='echo $PATH | tr -s ":" "\n"'
+
+# cd to directory and create if it doesn't exist
+alias take='mcd'
 
 # Include custom aliases
 [[ -f ~/.aliases.local ]] && source ~/.aliases.local
