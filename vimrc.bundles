@@ -41,6 +41,7 @@ if g:has_async
   Plug 'w0rp/ale'
 endif
 
+Plug 'zxqfl/tabnine-vim'
 Plug 'godlygeek/tabular'
 Plug 'mxw/vim-jsx'
 Plug 'posva/vim-vue'
