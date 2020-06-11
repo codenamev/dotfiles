@@ -22,6 +22,8 @@ if has("persistent_undo")
   set undodir=~/.vim/undo " Allow undos to persist even after a file is closed
   set undofile
 endif
+set modelines=0   " Disable modelines as a security precaution
+set nomodeline
 
 " Switch syntax highlighting on, when the terminal has colors
 " Also switch on highlighting the last used search pattern.
@@ -111,11 +113,8 @@ if executable('ag')
   " Use Ag over Grep
   set grepprg=ag\ --nogroup\ --nocolor
 
-  " Use ag in CtrlP for listing files. Lightning fast and respects .gitignore
-  let g:ctrlp_user_command = 'ag --literal --files-with-matches --nocolor --hidden -g "" %s'
-
-  " ag is fast enough that CtrlP doesn't need to cache
-  let g:ctrlp_use_caching = 0
+  " Use ag in fzf for listing files. Lightning fast and respects .gitignore
+  let $FZF_DEFAULT_COMMAND = 'ag --literal --files-with-matches --nocolor --hidden -g ""'
 
   if !exists(":Ag")
     command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
@@ -168,6 +167,9 @@ nnoremap <Leader>r :RunInInteractiveShell<Space>
 " Treat <li> and <p> tags like the block tags they are
 let g:html_indent_tags = 'li\|p'
 
+" Set tags for vim-fugitive
+set tags^=.git/tags
+
 " Open new split panes to right and bottom, which feels more natural
 set splitbelow
 set splitright
@@ -208,6 +210,9 @@ noremap \& :Tabularize /\(&\\|\\\\\)<CR>
 " configure syntastic with eslint
 "let g:jsx_ext_required = 0 " Allow JSX in normal JS files
 "let g:syntastic_javascript_checkers = ['eslint']
+
+" Map Ctrl + p to open fuzzy find (FZF)
+nnoremap <c-p> :Files<cr>
 
 " Set spellfile to location that is guaranteed to exist, can be symlinked to
 " Dropbox or kept in Git and managed outside of thoughtbot/dotfiles using rcm.

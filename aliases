@@ -53,7 +53,9 @@ alias path='echo $PATH | tr -s ":" "\n"'
 alias take='mcd'
 
 # Include custom aliases
-[[ -f ~/.aliases.local ]] && source ~/.aliases.local
+if [[ -f ~/.aliases.local ]]; then
+  source ~/.aliases.local
+fi
 
 # Migrane solvents
 # clear idiotic hidden OS X file attributes for downloaded files
