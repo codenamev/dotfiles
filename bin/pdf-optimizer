@@ -1,0 +1,9 @@
+#!/usr/bin/env zsh
+
+if [ "$1" != "" ]; then
+  inputPDF=$1
+  outputPDF=${2:-$inputPDF.compressed.pdf}
+  gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -dNOPAUSE -dQUIET -dBATCH -sOutputFile="$outputPDF" "$1"
+else
+  echo "usage: pdf-optimizer /path/to/input.pdf [/path/to/output.pdf]"
+fi
