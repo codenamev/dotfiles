@@ -22,7 +22,6 @@ alias vi="vim -v --noplugin"
 alias truncate=": >"
 
 # git
-alias g='git'
 alias ga='git add'
 alias gaa='git add --all'
 alias gst="git status"
