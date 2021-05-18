@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+# Usage: json-diff path/to/file/a.json path/to/file/b.json
+
+[ $# -ne 2 ] && echo "json-diff: 2 files needed" && exit 1
+[ ! -e $1 ] && echo "json-diff: $1 does not exist" && exit 1
+[ ! -e $2 ] && echo "json-diff: $2 does not exist" && exit 1
+
+colordiff <(jq -S . $1) <(jq -S . $2)
