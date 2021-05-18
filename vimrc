@@ -227,6 +227,9 @@ set diffopt+=vertical
 " Ensure git tags are setup properly
 :set tags^=./.git/tags;
 
+" Setup shortcut for Dash
+:nmap <silent> <leader>d <Plug>DashSearch
+
 " Setup shortcuts for vimux
  " Run the current file with ruby
  map <Leader>rb :call VimuxRunCommand("clear; bundle exec ruby " . expand("%"))<CR>
