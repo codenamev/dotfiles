@@ -18,6 +18,7 @@
   st = status -sb
 [core]
   excludesfile = ~/.gitignore
+  attributesfile = ~/.gitattributes
 	autocrlf = input
 [commit]
   template = ~/.gitmessage
