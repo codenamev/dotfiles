@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+grep-ruby -h '^[[:space:]]*\(class\|module\)\b[[:space:]]\w' |
+sed 's/^[[:space:]]*//' |
+cut -d ' ' -f 2 |
+sort -n |
+uniq -u |
+while read class; do
+  echo "`grep-ruby -l "\b$class\b" | wc -l` $class" >> ./tmp/constants.log
+done
