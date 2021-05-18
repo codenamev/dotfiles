@@ -17,6 +17,7 @@
   st = status
 [core]
   excludesfile = ~/.gitignore
+  attributesfile = ~/.gitattributes
 	autocrlf = input
 [commit]
   template = ~/.gitmessage
@@ -27,6 +28,7 @@
 [include]
   path = ~/.gitconfig.local
 	path = /Users/codenamev/.gitconfig.reflow
+	path = /Users/codenamev/.gitconfig.commander
 [diff]
   colorMoved = zebra
 [github]
