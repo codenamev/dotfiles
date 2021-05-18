@@ -6,6 +6,7 @@
 .byebug_history
 .env.local
 .git/
+.git-commands/
 /bower_components/
 /log/*
 !/log/.keep
@@ -17,3 +18,4 @@ log/*.log
 rerun.txt
 tags
 tmp/**/*
+Workflow
