@@ -1,12 +1,44 @@
 #!/usr/bin/env bash
 
-eval "$(rbenv init -)"
-if [ "$1" != "" ]; then
+command_exists() {
+  command -v foo >/dev/null 2>&1;
+}
+
+if [ "$1" = "" ]; then
+  echo "usage: global-gem install gem_name";
+  exit 1;
+fi
+
+# chruby
+# load chruby if available
+CHRUBY_COMMAND="/usr/local/share/chruby/chruby.sh"
+if [ -f $CHRUBY_COMMAND ]; then
+  source $CHRUBY_COMMAND
+else
+  echo "WTF"
+fi
+
+if [ -n "chruby" ]; then
+  echo "Installing for chruby: $(command -v chruby)";
+  for v in $(chruby); do
+    if [ "$v" != "*" ]; then
+      echo "----> Running 'gem $@' for $v";
+      chruby $v;
+      gem $@;
+    fi
+  done
+  exit 0;
+fi
+
+# rbenv
+if command_exists rbenv; then
+  eval "$(rbenv init -)"
   for v in $(rbenv versions --bare); do
     echo "-----> Running 'gem $@' for $v";
     rbenv shell $v;
     gem $@;
   done
-else
-  echo "usage: global-gem install gem_name"
 fi
+
+echo "No ruby version managers found"
+exit 1
