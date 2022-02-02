@@ -1,6 +1,3 @@
-# use zsh as default shell
-export SHELL=zsh
-
 local _old_path="$PATH"
 
 # Local config
@@ -30,3 +27,8 @@ MSG
 fi
 
 unset _old_path
+
+# Load McFly if installed
+if type mcfly &>/dev/null ; then
+  eval "$(mcfly init zsh)"
+fi
