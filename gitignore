@@ -6,6 +6,7 @@
 .env.local
 .git/
 .git-commands/
+.funky
 /bower_components/
 /log/*
 !/log/.keep
