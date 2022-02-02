@@ -21,7 +21,6 @@ Clona en tu laptop:
 
 Instala [rcm](https://github.com/thoughtbot/rcm):
 
-    brew tap thoughtbot/formulae
     brew install rcm
 
 Instala los dotfiles:
@@ -224,7 +223,7 @@ Alias de Shell y scripts:
 
 * `b` para `bundle`.
 * `g` sin argumentos es `git status` y con argumentos funciona como `git`.
-* `migrate` para `rake db:migrate && rake db:rollback && rake db:migrate`.
+* `migrate` para `bin/rails db:migrate db:rollback && bin/rails db:migrate db:test:prepare`.
 * `mcd` para crear un directorio e ir a él.
 * `replace foo bar **/*.rb` para buscar y reemplazar en una lista dada de archivos.
 * `tat` para adjuntar a una sesión de tmux llamada igual que el directorio actual.

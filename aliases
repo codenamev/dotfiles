@@ -37,7 +37,7 @@ alias b="bundle"
 alias be="bundle exec"
 
 # Rails
-alias migrate="rake db:migrate db:rollback && rake db:migrate"
+alias migrate="bin/rails db:migrate db:rollback && bin/rails db:migrate db:test:prepare"
 alias s="pass-fail rspec"
 alias specy="pass-fail bundle exec rspec"
 alias cuc='RAILS_ENV=test pass-fail bundle exec cucumber -f pretty --color'
