@@ -67,6 +67,7 @@ augroup vimrcEx
   autocmd BufRead,BufNewFile gitconfig.local set filetype=gitconfig
   autocmd BufRead,BufNewFile tmux.conf.local set filetype=tmux
   autocmd BufRead,BufNewFile vimrc.local set filetype=vim
+  autocmd BufRead,BufNewFile Workflow set filetype=ruby
 augroup END
 
 " ALE linting events
