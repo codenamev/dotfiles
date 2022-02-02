@@ -87,6 +87,7 @@ augroup vimrcEx
 
   " Auto-save files on update (add CursorHoldI for insert-mode activation)
   autocmd CursorHold * update
+  autocmd BufRead,BufNewFile Workflow set filetype=ruby
 augroup END
 
 " ALE linting events
