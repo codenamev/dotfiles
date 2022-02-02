@@ -17,7 +17,6 @@ alias l='colorls -lA --sd'
 alias ln="ln -v"
 alias mkdir="mkdir -p"
 alias e="$EDITOR"
-alias v="$VISUAL"
 alias vi="vim -v --noplugin"
 alias truncate=": >"
 

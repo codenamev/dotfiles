@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Usage: v [filename]
+#
+# Opens a file in vim defaulting to fzf
+
+if [ "$#" -ne 0 ]; then
+  vim $@
+else
+  if ! $(type fzf > /dev/null 2>&1); then
+    vim
+  else
+    vim $(fzf)
+  fi
+fi
