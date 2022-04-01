@@ -37,5 +37,7 @@ _load_settings "$HOME/.zsh/configs"
 # Local config
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
-# aliases
-[[ -f ~/.aliases ]] && source ~/.aliases
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# Auoto-loaded scripts post-session start
+[ -f ~/.startup ] && source ~/.startup
