@@ -42,3 +42,5 @@
 	process = git-lfs filter-process
 [merge]
   ff = only
+[gpg]
+	program = gpg
