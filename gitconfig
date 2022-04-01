@@ -32,3 +32,5 @@
   colorMoved = zebra
 [merge]
   ff = only
+[gpg]
+	program = gpg
