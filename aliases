@@ -19,6 +19,7 @@ alias mkdir="mkdir -p"
 alias e="$EDITOR"
 alias vi="vim -v --noplugin"
 alias truncate=": >"
+alias current-dir='echo "${PWD##*/}"'
 
 # git
 alias ga='git add'
