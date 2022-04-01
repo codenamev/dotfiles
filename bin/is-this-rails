@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+grep 'rails' 'Gemfile' >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+  echo "It's a Rails project!"
+else
+  exit 1
+fi
