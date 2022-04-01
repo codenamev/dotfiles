@@ -39,3 +39,6 @@ _load_settings "$HOME/.zsh/configs"
 
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
+
+# Auoto-loaded scripts post-session start
+[ -f ~/.startup ] && source ~/.startup
