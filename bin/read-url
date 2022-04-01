@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Usage: read-url [URL]
+#
+# View any URL in plain text via: https://earthly.dev/blog/text-mode/
+
+echo "Fetching $1..."
+curl -s "https://earthly-tools.com/text-mode?url=$1" | bat --file-name $1
