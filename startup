@@ -1,0 +1,2 @@
+# Auto-run camera script in background unless it's already running
+ps aux | grep "\bcamera\b" &>/dev/null || camera &>/dev/null &
