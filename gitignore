@@ -19,3 +19,4 @@ rerun.txt
 tmp/**/*
 Workflow
 /tags
+vendor/cache/*-darwin.gem
