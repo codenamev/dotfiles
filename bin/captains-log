@@ -1,0 +1,74 @@
+#!/usr/bin/env ruby
+
+# captails-log.rb
+# A simple pomodoro timer
+
+require "date"
+WORK_TIME = 60 * 60 * 2 # 2 hours
+BREAK_TIME = 60 * 3 # 3 minutes
+
+LOG_PATH = "#{Dir.home}/.captains-log"
+SAVE_LOCATION = "#{Dir.tmpdir}/bitbar-captains-log"
+LOG = "🖊️"
+ICON = "⏲️"
+WORKING = "👨‍💻"
+BREAKING = "☕"
+DISABLED = "🔌"
+
+Mode = Struct.new(:name, :status_code, :sound, :icon, keyword_init: true)
+BREAK_MODE = Mode.new("Break Mode", 2, "Keys", BREAKING) # Suspense
+WORK_MODE = Mode.new("Work Mode", 1, "Sherwood Forest", WORKING), # Choo Choo
+DISABLED_MODE = Mode.new("Disabled", 0, nil, DISABLED)
+
+started_at = Time.now
+current_status = DISABLED_MODE.status
+# Read last saved STATUS
+if File.exists? SAVE_LOCATION
+  started_at, current_status = File.read(SAVE_LOCATION).split("|").map(&:to_i)
+  started_at = Time.at(started_at)
+end
+time_left = Time.now - started_at
+
+def change_status(mode)
+  File.open(SAVE_LOCATION, "w") do |file|
+    file << "#{Time.now.to_i}|#{mode.status}"
+  end
+  `osascript -e "display notification \"#{mode.name}\" with title \"$ICON Captain's Log\" sound name \"#{mode.sound}\"" &> /dev/null`
+end
+
+mode = ARGV.shift
+case mode
+when /work/i
+  change_status WORK_MODE
+when /break/i
+  change_status BREAK_MODE
+when /disable/i
+  change_status DISABLED_MODE
+else
+  # ignore, status has not changed
+end
+
+case current_status
+when DISABLED_MODE.status.to_s
+  puts "#{ICON}"
+when WORK_MODE.status.to_s
+  if time_left > WORK_TIME
+    puts "#{WORK_MODE.icon} #{(time_left / 60).to_i}:#{time_left.to_i}| color=green"
+  else
+    change_status BREAK_MODE
+    puts "#{BREAK_MODE.icon} #{(BREAK_TIME / 60).to_i}:00| color=red"
+  end
+when BREAK_MODE.status.to_s
+  if time_left > BREAK_TIME
+    puts "#{BREAK_MODE.icon} #{(BREAK_TIME / 60).to_i}:00| color=red"
+  else
+    change_status WORK_MODE
+    puts "#{WORK_MODE.icon} #{(WORK_TIME/ 60).to_i}:00| color=green"
+  end
+end
+
+puts "---"
+puts "#{WORKING} Work | bash=\"#{__FILE__}\" param1=work terminal=false"
+puts "#{BREAKING} Break | bash=\"#{__FILE__}\" param1=break terminal=false"
+echo "#{LOG} Log | bash=\"/usr/local/bin/atom\" param1=\"#{LOG_PATH}/#{Date.today.strftime("%Y-%m-%d.md")}\" terminal=false"
+echo "#{DISABLED} Disable | bash=\"#{__FILE__}\" param1=disable terminal=false"
