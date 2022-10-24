@@ -44,3 +44,6 @@
   ff = only
 [gpg]
 	program = gpg
+[user]
+	name = Valentino Stoll
+	email = vstoll@doximity.com
