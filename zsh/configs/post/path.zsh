@@ -1,10 +1,18 @@
 # ensure dotfiles bin directory is loaded first
 PATH="$HOME/.bin:/usr/local/bin:/usr/local/sbin:$PATH"
 
+# Add .local/bin if present
+[[ -d "$HOME/.local/bin" ]] && export PATH=$HOME/.local/bin:$PATH
+
 # load homebrew if available
-if type /usr/local/bin/brew &>/dev/null ; then
+if type /opt/homebrew/bin/brew &>/dev/null ; then
   # Add homebrew completions
   FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
+  # Front-load brew'ed bins
+  export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
+  # load chruby if available
+  if [[ -s /opt/homebrew/opt/chruby/share/chruby/chruby.sh ]] ; then source /opt/homebrew/opt/chruby/share/chruby/chruby.sh ; fi
+  if [[ -s /opt/homebrew/opt/chruby/share/chruby/auto.sh ]] ; then source /opt/homebrew/opt/chruby/share/chruby/auto.sh ; fi
 fi
 
 # load rbenv if available

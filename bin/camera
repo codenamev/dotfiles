@@ -1,17 +1,18 @@
 #!/bin/bash
 
 exec log stream |
-  /usr/bin/grep -E --line-buffered 'UVCAssistant:.*(stop|start) stream' | # filter log events
+  #/usr/bin/grep -Ei --line-buffered 'UVCAssistant:.*(stop|start) stream' | # filter log events
+  /usr/bin/grep -Ei --line-buffered '(start|stop)stream\s?: powering (on|off) camera' | # filter log events
   tee /dev/stderr |                           # output matching events for debugging
-  /usr/bin/sed -Eu 's/.*(start|stop).*/\1/' | # reduce the log message down to a single word identifying the event/state
+  /usr/bin/sed -Eu 's/.*(start|stop).*/\1/i' | # reduce the log message down to a single word identifying the event/state
   while read -r event; do                     # store that word in the $event variable
     echo "Camera $event"
-    if [ "$event" = "start" ]; then
+    if [ "$event" = "Start" ]; then
       echo "Activate On Air"
-      shortcuts run 'Activate On Air' &
+      /usr/bin/shortcuts run 'Activate On Air' &
     else
       echo "De-activate On Air"
-      shortcuts run 'De-activate On Air' &
+      /usr/bin/shortcuts run 'De-activate On Air' &
     fi
   done
 
