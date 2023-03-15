@@ -11,7 +11,7 @@ fi
 
 # chruby
 # load chruby if available
-CHRUBY_COMMAND="/usr/local/share/chruby/chruby.sh"
+CHRUBY_COMMAND="/opt/homebrew/opt/chruby/share/chruby/chruby.sh"
 if [ -f $CHRUBY_COMMAND ]; then
   source $CHRUBY_COMMAND
 else
