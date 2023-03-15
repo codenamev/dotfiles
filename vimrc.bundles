@@ -29,6 +29,9 @@ else
   Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 endif
 
+" Open line in browser
+Plug 'tyru/open-browser'
+Plug 'tyru/open-browser-github'
 Plug 'junegunn/fzf.vim'
 Plug 'elixir-lang/vim-elixir'
 Plug 'ctrlpvim/ctrlp.vim'
