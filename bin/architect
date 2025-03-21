@@ -1,0 +1,106 @@
+#!/usr/bin/env ruby
+
+### Key Considerations:
+# - **Initialization**: We only need the repository path, but may include additional configurations.
+# - **trigger_on_files_changed**: This could be expanded to monitor specific file extensions if needed.
+# - **check_status**: Uses a `GitStatusCheckAction` to ensure the repository is in a good state for static analysis.
+# - **step**: Each analytical step is delegated to a unique class responsible for a specific part of the analysis, promoting single responsibility principle.
+# - **goal_condition**: Ensures readiness of repository status for analysis.
+# - **Analysis Tasks**: Includes purpose analysis, architecture summarization, component breakdown, mapping of interactions, and usage/churn metrics.
+# This sketch structure adheres to the requirements, while allowing modularity in the analysis methods.
+# Each customized class (`PurposeAnalyzer`, `ComponentAnalyzer`, etc.) would need to be implemented with fitting logic to perform these tasks.
+# This is kept abstract here due to variability in specific repository characteristics and desired detail depth.
+###
+
+require "bundler/inline"
+
+gemfile do
+  source "https://rubygems.org"
+  gem "sublayer", ">= 0.2.0"
+end
+
+module Sublayer
+  module Agents
+    class SoftwareArchitectAgent < Base
+      def initialize(repository_path:)
+        @repository_path = repository_path
+        @analysis_data = {}
+      end
+
+      trigger_on_files_changed do
+        # Assume we monitor changes in the repository itself
+        [@repository_path]
+      end
+
+      check_status do
+        # Check if repository state allows for analysis (e.g., no uncommitted changes)
+        status, output = Sublayer::Actions::GitStatusCheckAction.new(
+          repository_path: @repository_path
+        ).call
+
+        if status == :clean
+          puts "Repository is clean and ready for analysis"
+          @analysis_ready = true
+        else
+          puts "Repository has pending changes. Analysis halted."
+          @analysis_ready = false
+        end
+
+        @analysis_ready
+      end
+
+      goal_condition do
+        @analysis_ready == true
+      end
+
+      step do
+        puts "Analyzing repository"
+
+        # Step 1: Understand the purpose(s) of the repository
+        purposes = Sublayer::Analyzers::PurposeAnalyzer.new(
+          repository_path: @repository_path
+        ).analyze
+
+        # Step 2: Summarize the architectural choices
+        architecture_summary = Sublayer::Analyzers::ArchitectureAnalyzer.new(
+          repository_path: @repository_path
+        ).analyze
+
+        # Step 3: Outline the primary application components
+        components = Sublayer::Analyzers::ComponentAnalyzer.new(
+          repository_path: @repository_path
+        ).analyze
+
+        # Step 4: Map the components
+        component_map = Sublayer::Analyzers::ComponentMapGenerator.new(
+          components: components
+        ).generate_map
+
+        # Step 5 & 6: Identify frequently used and high churn components
+        usage_stats = Sublayer::Analyzers::ComponentUsageAnalyzer.new(
+          repository_path: @repository_path
+        ).analyze
+
+        churn_stats = Sublayer::Analyzers::ComponentChurnAnalyzer.new(
+          repository_path: @repository_path
+        ).analyze
+
+        # Collect all analysis data and store in @analysis_data
+        @analysis_data = {
+          purposes: purposes,
+          architecture_summary: architecture_summary,
+          components: components,
+          component_map: component_map,
+          usage_stats: usage_stats,
+          churn_stats: churn_stats
+        }
+
+        # Assuming further steps might use this collected data for report generation
+        Sublayer::Actions::ReportGeneratorAction.new(
+          analysis_data: @analysis_data,
+          output_path: File.join(@repository_path, 'architecture_report.txt')
+        ).call
+      end
+    end
+  end
+end
