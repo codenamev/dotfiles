@@ -1,18 +1,101 @@
 #!/bin/bash
 
-exec log stream |
-  #/usr/bin/grep -Ei --line-buffered 'UVCAssistant:.*(stop|start) stream' | # filter log events
-  /usr/bin/grep -Ei --line-buffered '(start|stop)stream(.*)\s?: powering (on|off) camera' | # filter log events
-  tee /dev/stderr |                           # output matching events for debugging
-  /usr/bin/sed -Eu 's/.*(start|stop).*/\1/i' | # reduce the log message down to a single word identifying the event/state
-  while read -r event; do                     # store that word in the $event variable
-    echo "Camera $event"
-    if [ "$event" = "Start" ]; then
-      echo "Activate On Air"
-      /usr/bin/shortcuts run 'Activate On Air' &
-    else
-      echo "De-activate On Air"
-      /usr/bin/shortcuts run 'De-activate On Air' &
-    fi
-  done
+touch $HOME/.camerastate
+touch $HOME/.cameralog
+echo "0" > $HOME/.camerastate
+device=''
+event=''
+process=0
+activeCount=0
 
+function activateonair() {
+  echo "Activate On Air" >> $HOME/.cameralog
+  echo "1" > $HOME/.camerastate
+  /usr/bin/shortcuts run 'Activate On Air' &
+}
+
+function deactivateonair() {
+  echo "De-activate On Air" >> $HOME/.cameralog
+  echo "0" > $HOME/.camerastate
+  /usr/bin/shortcuts run 'De-activate On Air' &
+}
+
+function updatecamerastate() {
+  globalcamerastate=$(cat $HOME/.camerastate)
+}
+
+while test $# -gt 0; do
+  case "$1" in
+    -h|--help)
+      echo "camera - run shortcut on camera activity"
+      echo " "
+      echo "camera [options]"
+      echo " "
+      echo "options:"
+      echo "-h, --help show this help message"
+      echo "-d, --device=<camera|microphone>"
+      echo "-e, --event=<on|off>"
+      echo "-p, --process=<pid> activation process id"
+      echo "-a, --activeCount=<0..n> number of devices still active"
+      exit 0
+      ;;
+    -d|-device|--device)
+      shift
+      if test $# -gt 0; then
+        echo "Device: $1"
+        device="$1"
+      fi
+      shift
+      ;;
+    -e|-event|--event)
+      shift
+      if test $# -gt 0; then
+        echo "Event: $1"
+        event="$1"
+      fi
+      shift
+      ;;
+    -p|-process|--process)
+      shift
+      if test $# -gt 0; then
+        echo "Process: $1"
+        process=$1
+      fi
+      shift
+      ;;
+    -a|-activeCount|--activeCount)
+      shift
+      if test $# -gt 0; then
+        echo "activeCount: $1"
+        activeCount=$1
+      fi
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+echo "Detected $device state changed to $event (p: $process, a: $activeCount)"
+
+if [[ "$device" =~ (camera) && "$event" =~ (on|On) ]]; then
+  activateonair
+elif [[ "$device" =~ (camera) && "$event" =~ (off|Off) ]]; then
+  deactivateonair
+fi
+
+#log stream --predicate 'sender contains "appleh13camerad" and (composedMessage contains "PowerOnCamera" or composedMessage contains "PowerOffCamera") and NOT (composedMessage contains "already")' |
+#  #/usr/bin/grep -Ei --line-buffered 'UVCAssistant:.*(stop|start) stream' | # filter log events
+#  /usr/bin/grep -Ei --line-buffered 'Power(On|Off)Camera' | # filter log events
+#  tee /dev/stderr                                         | # output matching events for debugging
+#  /usr/bin/sed -Eu 's/.*(on|off).*/\1/i'                  | # reduce the log message down to a single word identifying the event/state
+#  while read -r event; do                                   # store that word in the $event variable
+#    updatecamerastate
+#    echo "Camera $event" >> $HOME/.cameralog
+#    if [[ "$globalcamerastate" =~ "0" && "$event" =~ (on|On) ]]; then
+#      activateonair
+#    elif [[ "$globalcamerastate" =~ "1" && "$event" =~ (off|Off) ]]; then
+#      deactivateonair
+#    fi
+#  done
