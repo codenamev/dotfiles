@@ -21,3 +21,4 @@ Workflow
 /tags
 vendor/cache/*-darwin.gem
 .irb_history
+.aider.*

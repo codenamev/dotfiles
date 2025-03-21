@@ -46,14 +46,18 @@ Plug 'tpope/vim-rake'
 Plug 'tpope/vim-repeat'
 "Plug 'tpope/vim-rhubarb'
 Plug 'tpope/vim-surround'
+Plug 'prabirshrestha/vim-lsp'
+Plug 'mattn/vim-lsp-settings'
 Plug 'vim-ruby/vim-ruby'
 Plug 'vim-scripts/tComment'
+" AI
+Plug 'joshuavial/aider.nvim'
 
 if g:has_async
   Plug 'dense-analysis/ale'
 endif
 
-Plug 'zxqfl/tabnine-vim'
+"Plug 'zxqfl/tabnine-vim'
 Plug 'godlygeek/tabular'
 Plug 'mxw/vim-jsx'
 Plug 'posva/vim-vue'
