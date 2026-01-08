@@ -5,6 +5,9 @@
 
 set -euo pipefail
 
+# Source cache manager
+source ~/.tmux/scripts/cache-manager.sh
+
 # Get terminal width
 WIDTH=$(tmux display-message -p '#{window_width}' 2>/dev/null || echo 80)
 
@@ -26,17 +29,10 @@ git_info=""
 lang_info=""
 dir_info=""
 
-# Git status
-if git rev-parse --git-dir >/dev/null 2>&1; then
-    branch=$(git branch --show-current 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
-
-    if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
-        git_status="✗"
-    else
-        git_status="✓"
-    fi
-
-    git_info="${GREEN} ${branch}${git_status}${RESET}"
+# Git status with caching
+git_status_cached=$(get_git_status "$PWD")
+if [[ -n "$git_status_cached" ]]; then
+    git_info="${GREEN} ${git_status_cached}${RESET}"
 fi
 
 # Language detection with responsive formatting
