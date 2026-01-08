@@ -18,6 +18,9 @@ GREEN="#[fg=colour2]"
 ORANGE="#[fg=colour166]"
 RESET="#[fg=colour250]"
 
+# Get context information
+context_info=$(~/.tmux/scripts/context-detect.sh)
+
 # Initialize components
 git_info=""
 lang_info=""
@@ -100,13 +103,13 @@ if [[ $WIDTH -gt 120 ]]; then
     # Wide: Full info
     dir_info=$(get_directory "full")
     lang_info=$(detect_languages "full")
-    echo "${dir_info}${git_info}${lang_info}"
+    echo "${context_info}${dir_info}${git_info}${lang_info}"
 elif [[ $WIDTH -gt 80 ]]; then
     # Medium: Abbreviated
     dir_info=$(get_directory "short")
     lang_info=$(detect_languages "short")
-    echo "${dir_info}${git_info}${lang_info}"
+    echo "${context_info}${dir_info}${git_info}${lang_info}"
 else
     # Narrow: Essential only
-    echo "${git_info}"
+    echo "${context_info}${git_info}"
 fi
