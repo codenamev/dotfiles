@@ -56,13 +56,13 @@ get_git_status() {
 
     if [[ -d "$git_dir" ]]; then
         local git_mtime
-        git_mtime=$(find "$git_dir" -type f -name "HEAD" -o -name "index" | xargs stat -c %Y 2>/dev/null | sort -n | tail -1 || echo 0)
+        git_mtime=$(find "$git_dir" -type f -name "HEAD" -o -name "index" | xargs stat -c %Y 2>/dev/null || find "$git_dir" -type f -name "HEAD" -o -name "index" | xargs stat -f %m 2>/dev/null | sort -n | tail -1 || echo 0)
         local cache_file
         cache_file=$(cache_key "git" "$pwd")
 
         if [[ -f "$cache_file" ]]; then
             local cache_mtime
-            cache_mtime=$(stat -c %Y "$cache_file" 2>/dev/null || echo 0)
+            cache_mtime=$(stat -c %Y "$cache_file" 2>/dev/null || stat -f %m "$cache_file" 2>/dev/null || echo 0)
             if [[ $cache_mtime -gt $git_mtime ]]; then
                 cat "$cache_file"
                 return
