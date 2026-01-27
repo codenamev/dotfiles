@@ -1,0 +1,94 @@
+# Starship Configuration
+# Replaces powerlevel9k with enhanced git status and language detection
+
+# Format string defines the prompt structure
+format = """
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$nodejs\
+$python\
+$ruby\
+$character"""
+
+# SSH connection detection - shows username@hostname when connected via SSH
+[username]
+format = "[$user]($style)@"
+style_user = "bold green"
+style_root = "bold red"
+show_always = false
+detect_env_vars = ["SSH_CONNECTION", "SSH_CLIENT", "SSH_TTY"]
+
+[hostname]
+format = "[$hostname]($style):"
+style = "bold green"
+ssh_only = true
+trim_at = "."
+
+# Directory display - matches current blue styling
+[directory]
+format = "[$path]($style)"
+style = "bold blue"
+truncation_length = 0
+truncate_to_repo = false
+
+# Enhanced git branch display
+[git_branch]
+format = " [$symbol$branch]($style)"
+symbol = ""
+style = "bold green"
+
+# Git status with enhanced information
+[git_status]
+format = '([\[$all_status$ahead_behind\]]($style))'
+style = "bold green"
+conflicted = "="
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+up_to_date = ""
+untracked = "?"
+stashed = '\$'
+modified = "!"
+staged = "+"
+renamed = "»"
+deleted = "✘"
+
+# Language/Tool Version Detection
+
+# Node.js
+[nodejs]
+format = " [$symbol($version)]($style)"
+version_format = "v${raw}"
+symbol = "⬢ "
+style = "bold green"
+detect_extensions = ["js", "mjs", "cjs", "ts", "tsx"]
+detect_files = ["package.json", ".node-version", ".nvmrc"]
+detect_folders = ["node_modules"]
+
+# Python
+[python]
+format = " [$symbol$pyenv_prefix($version)($virtualenv)]($style)"
+symbol = "🐍 "
+style = "bold yellow"
+pyenv_version_name = false
+pyenv_prefix = ""
+detect_extensions = ["py"]
+detect_files = [".python-version", "Pipfile", "__init__.py", "pyproject.toml", "requirements.txt", "setup.py", "tox.ini"]
+
+# Ruby
+[ruby]
+format = " [$symbol($version)]($style)"
+symbol = "💎 "
+style = "bold red"
+detect_extensions = ["rb"]
+detect_files = ["Gemfile", ".ruby-version"]
+detect_folders = []
+detect_variables = ["RUBY_VERSION", "RBENV_VERSION"]
+
+# Command character - simple prompt ending
+[character]
+success_symbol = " [%](bold white)"
+error_symbol = " [%](bold red)"
