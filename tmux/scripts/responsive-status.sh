@@ -19,10 +19,68 @@ cd "$PWD" || exit 1
 BLUE="#[fg=colour117]"
 GREEN="#[fg=colour2]"
 ORANGE="#[fg=colour166]"
+PURPLE="#[fg=colour141]"
+YELLOW="#[fg=colour214]"
+RED="#[fg=colour203]"
 RESET="#[fg=colour250]"
 
 # Get context information
 context_info=$(~/.tmux/scripts/context-detect.sh)
+
+# Claude status from statusline integration
+claude_info=""
+if [[ -f /tmp/claude-status-latest ]]; then
+    claude_data=$(cat /tmp/claude-status-latest 2>/dev/null || echo "{}")
+    claude_ts=$(echo "$claude_data" | jq -r '.timestamp // 0' 2>/dev/null || echo 0)
+    now=$(date +%s)
+    # Only show if updated within last 60 seconds (active session)
+    if [[ $((now - claude_ts)) -lt 60 ]]; then
+        claude_model=$(echo "$claude_data" | jq -r '.model // empty' 2>/dev/null)
+        claude_cost=$(echo "$claude_data" | jq -r '.cost // empty' 2>/dev/null)
+        claude_ctx=$(echo "$claude_data" | jq -r '.context // empty' 2>/dev/null)
+        if [[ -n "$claude_model" ]]; then
+            claude_info="${PURPLE}${claude_model}${RESET}"
+            [[ -n "$claude_cost" ]] && claude_info+=" ${claude_cost}"
+            [[ -n "$claude_ctx" && "$claude_ctx" != "0" ]] && claude_info+=" ${claude_ctx}%"
+            claude_info+=" │ "
+        fi
+    fi
+fi
+
+# AWS SSO TTL detection
+sso_info=""
+SSO_CACHE_FILE=$(ls -t ~/.aws/sso/cache/*.json 2>/dev/null | head -1)
+if [[ -n "$SSO_CACHE_FILE" ]]; then
+    EXPIRES_AT=$(jq -r '.expiresAt // empty' "$SSO_CACHE_FILE" 2>/dev/null)
+    if [[ -n "$EXPIRES_AT" ]]; then
+        # Parse UTC timestamp - macOS date format
+        EXPIRES_EPOCH=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$EXPIRES_AT" "+%s" 2>/dev/null || \
+                        date -u -j -f "%Y-%m-%dT%H:%M:%S" "${EXPIRES_AT%Z}" "+%s" 2>/dev/null)
+        if [[ -n "$EXPIRES_EPOCH" ]]; then
+            NOW_EPOCH=$(date "+%s")
+            REMAINING=$((EXPIRES_EPOCH - NOW_EPOCH))
+            if [[ "$REMAINING" -gt 0 ]]; then
+                HOURS=$((REMAINING / 3600))
+                MINUTES=$(((REMAINING % 3600) / 60))
+                if [[ "$HOURS" -gt 0 ]]; then
+                    SSO_TTL="${HOURS}h${MINUTES}m"
+                else
+                    SSO_TTL="${MINUTES}m"
+                fi
+                # Color based on urgency
+                if [[ "$REMAINING" -lt 3600 ]]; then
+                    sso_info="${RED}󰌆 ${SSO_TTL}${RESET} │ "
+                elif [[ "$REMAINING" -lt 7200 ]]; then
+                    sso_info="${YELLOW}󰌆 ${SSO_TTL}${RESET} │ "
+                else
+                    sso_info="${GREEN}󰌆 ${SSO_TTL}${RESET} │ "
+                fi
+            else
+                sso_info="${RED}󰌆 expired${RESET} │ "
+            fi
+        fi
+    fi
+fi
 
 # Initialize components
 git_info=""
@@ -99,13 +157,13 @@ if [[ $WIDTH -gt 120 ]]; then
     # Wide: Full info
     dir_info=$(get_directory "full")
     lang_info=$(detect_languages "full")
-    echo "${context_info}${dir_info}${git_info}${lang_info}"
+    echo "${claude_info}${sso_info}${context_info}${dir_info}${git_info}${lang_info}"
 elif [[ $WIDTH -gt 80 ]]; then
     # Medium: Abbreviated
     dir_info=$(get_directory "short")
     lang_info=$(detect_languages "short")
-    echo "${context_info}${dir_info}${git_info}${lang_info}"
+    echo "${claude_info}${sso_info}${context_info}${dir_info}${git_info}${lang_info}"
 else
-    # Narrow: Essential only
-    echo "${context_info}${git_info}"
+    # Narrow: Essential only (still show Claude and SSO if active)
+    echo "${claude_info}${sso_info}${context_info}${git_info}"
 fi
