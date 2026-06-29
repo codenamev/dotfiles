@@ -30,4 +30,4 @@ unset _old_path
 if type mcfly &>/dev/null ; then
   eval "$(mcfly init zsh)"
 fi
-. "$HOME/.cargo/env"
+[[ -f ~/.cargo/env ]] && . "$HOME/.cargo/env"
