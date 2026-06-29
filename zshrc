@@ -5,6 +5,16 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
+# load zmv for our mmv function
+autoload -U zmv
+
+# load our own completion functions
+fpath=(~/.zsh/completion /usr/local/share/zsh/site-functions $fpath)
+
+# completion
+autoload -U compinit
+compinit
+
 # load custom executable functions
 for function in ~/.zsh/functions/*; do
   source $function
@@ -50,6 +60,8 @@ export PATH="$HOME/src/bin:$PATH"
 
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Auoto-loaded scripts post-session start
 [ -f ~/.startup ] && source ~/.startup

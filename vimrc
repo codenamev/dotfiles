@@ -14,6 +14,14 @@ set showcmd       " display incomplete commands
 set incsearch     " do incremental searching
 set laststatus=2  " Always display the status line
 set autowrite     " Automatically :write before running commands
+set regexpengine=2 " use new engine
+
+" Undo
+set undolevels=10000
+if has("persistent_undo")
+  set undodir=~/.vim/undo " Allow undos to persist even after a file is closed
+  set undofile
+endif
 set modelines=0   " Disable modelines as a security precaution
 set nomodeline
 set regexpengine=2 " use new engine
@@ -84,13 +92,52 @@ augroup vimrcEx
 
   " Allow stylesheets to autocomplete hyphenated words
   autocmd FileType css,scss,sass setlocal iskeyword+=-
-
-  " Auto-save files on update (add CursorHoldI for insert-mode activation)
-  autocmd CursorHold * update
   autocmd BufRead,BufNewFile Workflow set filetype=ruby
 augroup END
 
 " ALE linting events
+" configure ALE for Standard Ruby
+let g:ale_linters = {'ruby': ['standardrb']}
+let g:ale_fixers = {'ruby': ['standardrb']}
+" Use standard if available
+if executable('standardrb')
+  au User lsp_setup call lsp#register_server({
+        \ 'name': 'standardrb',
+        \ 'cmd': ['standardrb', '--lsp'],
+        \ 'allowlist': ['ruby'],
+        \ })
+endif
+
+" LSP
+function! s:on_lsp_buffer_enabled() abort
+    setlocal omnifunc=lsp#complete
+    setlocal signcolumn=yes
+    if exists('+tagfunc') | setlocal tagfunc=lsp#tagfunc | endif
+    nmap <buffer> gd <plug>(lsp-definition)
+    nmap <buffer> gs <plug>(lsp-document-symbol-search)
+    nmap <buffer> gS <plug>(lsp-workspace-symbol-search)
+    nmap <buffer> gr <plug>(lsp-references)
+    nmap <buffer> gi <plug>(lsp-implementation)
+    nmap <buffer> <leader>rn <plug>(lsp-rename)
+    nmap <buffer> [g <plug>(lsp-previous-diagnostic)
+    nmap <buffer> ]g <plug>(lsp-next-diagnostic)
+    nmap <buffer> K <plug>(lsp-hover)
+    nnoremap <buffer> <expr><c-f> lsp#scroll(+4)
+    nnoremap <buffer> <expr><c-d> lsp#scroll(-4)
+
+    let g:lsp_format_sync_timeout = 1000
+    autocmd! BufWritePre *.rs,*.go call execute('LspDocumentFormatSync')
+
+    " refer to doc to add more commands
+endfunction
+
+augroup lsp_install
+    au!
+    " call s:on_lsp_buffer_enabled only for languages that has the server registered.
+    autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
+augroup END
+
+" ALE
 augroup ale
   autocmd!
 
@@ -106,6 +153,10 @@ augroup ale
     echoerr "The thoughtbot dotfiles require NeoVim or Vim 8"
   endif
 augroup END
+
+" Adjust vim-ruby to work nicely with stanardrb lsp setup
+let g:ruby_indent_assignment_style = 'variable'
+let g:ruby_indent_hanging_elements = 0
 
 augroup highlighters
   autocmd!
@@ -137,6 +188,9 @@ if executable('ag')
   " Use ag in fzf for listing files. Lightning fast and respects .gitignore
   let $FZF_DEFAULT_COMMAND = 'ag --literal --files-with-matches --nocolor --hidden -g ""'
 
+  if !exists(":Ag")
+    command -nargs=+ -complete=file -bar Ag silent! grep! <args>|cwindow|redraw!
+  endif
   nnoremap \ :Ag<SPACE>
 endif
 
@@ -203,6 +257,31 @@ nnoremap <C-l> <C-w>l
 " Move between linting errors
 nnoremap ]r :ALENextWrap<CR>
 nnoremap [r :ALEPreviousWrap<CR>
+
+" Make F5 and F6 magic white space scrubbers
+nnoremap <silent> <F5> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar>:nohl<CR>
+nnoremap <silent> <F6> :retab<CR>
+
+" Tabularize shortcuts
+noremap \= :Tabularize /=<CR>
+noremap \: :Tabularize /^[^:]*:\zs/l0l1<CR>
+noremap \> :Tabularize /=><CR>
+noremap \, :Tabularize /,\zs/l0l1<CR>
+noremap \{ :Tabularize /{<CR>
+noremap \\| :Tabularize /\|<CR>
+noremap \& :Tabularize /\(&\\|\\\\\)<CR>
+
+" configure syntastic syntax checking to check on open as well as save
+"let g:syntastic_always_populate_loc_list = 1
+"let g:syntastic_auto_loc_list = 1
+"let g:syntastic_check_on_open=1
+"let g:syntastic_check_on_wq = 0
+"let g:syntastic_html_tidy_ignore_errors=[" proprietary attribute \"ng-"]
+"let g:syntastic_eruby_ruby_quiet_messages = {"regex": \"possibly useless use of a variable in void context"}
+
+" configure syntastic with eslint
+"let g:jsx_ext_required = 0 " Allow JSX in normal JS files
+"let g:syntastic_javascript_checkers = ['eslint']
 
 " Map Ctrl + p to open fuzzy find (FZF)
 nnoremap <c-p> :Files<cr>

@@ -60,6 +60,11 @@ fi
 # clear idiotic hidden OS X file attributes for downloaded files
 alias fuckxattr='xattr -c -r'
 
+# Utility
+# extract redirect location from a URL
+alias redirect-popper="curl -LIs -o /dev/null -w '%{url_effective}'"
+
 # Tmux helpers
 alias tmux-current-session-name="tmux display-message -p '#S'"
 alias tmux-last-pane-number="tmux list-panes -F '#P' | tail -n1"
+alias mux="tmuxinator || gem install tmuxinator && tmuxinator"

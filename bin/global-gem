@@ -10,8 +10,12 @@ if [ "$1" = "" ]; then
 fi
 
 # chruby
-# load chruby if available
-CHRUBY_COMMAND="/usr/local/share/chruby/chruby.sh"
+# load chruby if available (Apple Silicon and Intel Homebrew paths)
+for CHRUBY_COMMAND in \
+  /opt/homebrew/opt/chruby/share/chruby/chruby.sh \
+  /usr/local/share/chruby/chruby.sh; do
+  [ -f "$CHRUBY_COMMAND" ] && break
+done
 if [ -f $CHRUBY_COMMAND ]; then
   source $CHRUBY_COMMAND
 else

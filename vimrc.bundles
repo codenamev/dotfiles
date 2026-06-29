@@ -25,6 +25,9 @@ else
   Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 endif
 
+" Open line in browser
+Plug 'tyru/open-browser'
+Plug 'tyru/open-browser-github'
 Plug 'junegunn/fzf.vim'
 Plug 'elixir-lang/vim-elixir'
 Plug 'fatih/vim-go'
@@ -34,12 +37,21 @@ Plug 'pbrisbin/vim-mkdir'
 Plug 'rizzatti/dash.vim'
 Plug 'slim-template/vim-slim'
 Plug 'tpope/vim-bundler'
+"Plug 'tpope/vim-endwise'
+"Plug 'tpope/vim-eunuch'
 Plug 'tpope/vim-fugitive'
+"Plug 'tpope/vim-projectionist'
+"Plug 'tpope/vim-rails'
 Plug 'tpope/vim-rake'
 Plug 'tpope/vim-repeat'
+"Plug 'tpope/vim-rhubarb'
 Plug 'tpope/vim-surround'
+Plug 'prabirshrestha/vim-lsp'
+Plug 'mattn/vim-lsp-settings'
 Plug 'vim-ruby/vim-ruby'
 Plug 'vim-scripts/tComment'
+" AI
+Plug 'joshuavial/aider.nvim'
 
 if g:has_async
   Plug 'w0rp/ale'
@@ -62,6 +74,20 @@ Plug 'vimwiki/vimwiki'
 if g:has_async
   Plug 'dense-analysis/ale'
 endif
+
+"Plug 'zxqfl/tabnine-vim'
+Plug 'godlygeek/tabular'
+Plug 'mxw/vim-jsx'
+Plug 'posva/vim-vue'
+"Plug 'junkblocker/patchreview-vim'
+"Plug 'codegram/vim-codereview'
+Plug 'benmills/vimux'
+" Track the engine.
+Plug 'SirVer/ultisnips'
+" Snippets are separated from the engine. Add this if you want them:
+Plug 'honza/vim-snippets'
+" VimWiki
+Plug 'vimwiki/vimwiki'
 
 if filereadable(expand("~/.vimrc.bundles.local"))
   source ~/.vimrc.bundles.local
