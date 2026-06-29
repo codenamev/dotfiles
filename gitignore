@@ -22,3 +22,5 @@ Workflow
 vendor/cache/*-darwin.gem
 .irb_history
 .aider.*
+
+**/.claude/settings.local.json
