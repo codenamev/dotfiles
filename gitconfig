@@ -27,14 +27,19 @@
   prune = true
 [rebase]
   autosquash = true
-[include]
-  path = ~/.gitconfig.local
 [diff]
   colorMoved = zebra
 [merge]
   ff = only
-[gpg]
-	program = gpg
 [user]
-	name = Valentino Stoll
-	email = vstoll@doximity.com
+  name = Valentino Stoll
+  email = v@codenamev.com
+	signingkey = /Users/valentino.stoll/.ssh/id_ed25519.pub
+[include]
+  path = ~/.gitconfig.local
+[gpg]
+	format = ssh
+[safe]
+	directory = /workspace
+[url "git@github.com:"]
+	insteadOf = https://github.com/
