@@ -22,3 +22,6 @@ Workflow
 vendor/cache/*-darwin.gem
 .irb_history
 .aider.*
+.architecture/reviews/*
+# Cursor artifacts
+.diary/

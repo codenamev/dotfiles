@@ -33,3 +33,7 @@ if type mcfly &>/dev/null ; then
   eval "$(mcfly init zsh)"
 fi
 . "$HOME/.cargo/env"
+
+# claude-memory: local fastembed embeddings (set up 2026-06-08)
+export CLAUDE_MEMORY_EMBEDDING_PROVIDER=fastembed
+export CLAUDE_MEMORY_EMBEDDING_MODEL=BAAI/bge-base-en-v1.5

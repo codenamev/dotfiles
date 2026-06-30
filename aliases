@@ -26,6 +26,8 @@ alias ga='git add'
 alias gaa='git add --all'
 alias gst="git status"
 alias gd="git diff"
+alias g="git"
+alias gi="git"
 
 # Support for Hub
 # https://hub.github.com/

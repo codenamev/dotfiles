@@ -12,3 +12,4 @@ tags
 /spec/services/captions/sources/downsub_spec.rb
 /config/spunkt_params
 apiary.apib
+/**/static/build
