@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+set -o errexit -o nounset -o pipefail
+
+# Configuration: context window progress thresholds
+PROGRESS_COMPACT=80 # Percentage at which Claude compacts context
+PROGRESS_YELLOW=50  # Warning threshold for progress bar
+PROGRESS_RED=65     # Error threshold for progress bar
+
+# Configuration: model display names
+HAIKU=" haiku"
+SONNET="󰚩 sonnet"
+OPUS="󱚦 opus"
+
+# Configuration: random star characters for prompt decoration
+STARS=("" "✴" "✶" "❇" "✳" "❋" "*" "✦" "✧" "✸" "✷" "✶" "✴" "✳" "✲" "✱" "❉" "❈" "❇")
+# Export a random star character that changes each prompt
+export CLAUDE_STAR="${STARS[$RANDOM % ${#STARS[@]}]}"
+
+# Parse command line options
+show_progress=1
+starship_config=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+  --no-progress)
+    show_progress=0
+    shift
+    ;;
+  --config)
+    if [ $# -lt 2 ]; then
+      echo "Error: --config requires a path argument" >&2
+      exit 1
+    fi
+    starship_config="$2"
+    shift 2
+    ;;
+  *)
+    echo "Unknown option: $1" >&2
+    exit 1
+    ;;
+  esac
+done
+
+payload="$(cat || true)"
+
+if command -v jq >/dev/null 2>&1 && [ -n "$payload" ]; then
+  #
+  # cd into the workspace dir (current_dir > project_dir > cwd)
+  #
+  dir="$(
+    printf '%s' "$payload" |
+      jq -r '.workspace.current_dir // .workspace.project_dir // .cwd // empty'
+  )"
+  if [ -n "$dir" ] && [ -d "$dir" ]; then
+    cd "$dir"
+  fi
+
+  #
+  # Short model name: haiku / sonnet / opus
+  #
+  raw_model="$(
+    printf '%s' "$payload" |
+      jq -r '.model.display_name // .model.id // empty'
+  )"
+
+  if [ -n "$raw_model" ]; then
+    lower_model="$(printf '%s' "$raw_model" | tr '[:upper:]' '[:lower:]')"
+
+    case "$lower_model" in
+    *haiku*) short_model="$HAIKU" ;;
+    *sonnet*) short_model="$SONNET" ;;
+    *opus*) short_model="$OPUS" ;;
+    *) short_model="$raw_model" ;;
+    esac
+
+    export CLAUDE_MODEL="$short_model"
+  fi
+
+  #
+  # Cost: .cost.total_cost_usd → CLAUDE_COST (already formatted)
+  #
+  raw_cost="$(
+    printf '%s' "$payload" |
+      jq -r '.cost.total_cost_usd // empty'
+  )"
+
+  if [ -n "$raw_cost" ] && [ "$raw_cost" != "null" ]; then
+    # Format like $0.03 / < $0.01
+    formatted_cost="$(
+      awk -v v="$raw_cost" '
+        BEGIN {
+          if (v == "" || v == "null") exit 1
+          if (v < 0.01 && v > 0) { print "< $0.01"; exit 0 }
+          printf "$%.2f", v
+        }
+      '
+    )" || true
+
+    if [ -n "$formatted_cost" ]; then
+      export CLAUDE_COST="$formatted_cost"
+    fi
+  fi
+
+  #
+  # Session id if you ever want it in Starship later
+  #
+  session_id="$(
+    printf '%s' "$payload" |
+      jq -r '.session_id // empty'
+  )"
+  if [ -n "$session_id" ]; then
+    export CLAUDE_SESSION_ID="$session_id"
+  fi
+
+  #
+  # Context window usage percentage
+  #
+  context_size="$(
+    printf '%s' "$payload" |
+      jq -r '.context_window.context_window_size // empty'
+  )"
+  current_usage="$(
+    printf '%s' "$payload" |
+      jq '.context_window.current_usage // null'
+  )"
+
+  if [ -n "$context_size" ] && [ "$context_size" != "null" ] && [ "$current_usage" != "null" ]; then
+    current_tokens="$(
+      printf '%s' "$current_usage" |
+        jq '.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens'
+    )"
+    if [ -n "$current_tokens" ] && [ "$current_tokens" != "null" ]; then
+      percent_used=$((current_tokens * 100 / context_size))
+      export CLAUDE_CONTEXT="${percent_used}%"
+
+      # Terminal progress bar (OSC 9;4) is optional
+      # Can be disabled via --no-progress flag
+      # Defaults to enabled (1) if not set
+      if [ "$show_progress" = "1" ]; then
+        # Scale progress bar: 0-PROGRESS_COMPACT% context maps to 0-100% progress
+        # Claude compacts at PROGRESS_COMPACT%, so treat that as "full"
+        if [ "$percent_used" -ge "$PROGRESS_COMPACT" ]; then
+          progress_percent=100
+        else
+          progress_percent=$((percent_used * 100 / PROGRESS_COMPACT))
+        fi
+
+        # OSC 9;4 progress bar: ESC ] 9 ; 4 ; <state> ; <progress> BEL
+        # State based on actual context usage:
+        # 0-PROGRESS_YELLOW%: normal (state 1), PROGRESS_YELLOW-PROGRESS_RED%: warning (state 4), PROGRESS_RED%+: error (state 2)
+        if [ "$percent_used" -ge "$PROGRESS_RED" ]; then
+          progress_state=2 # Error
+        elif [ "$percent_used" -ge "$PROGRESS_YELLOW" ]; then
+          progress_state=4 # Warning
+        else
+          progress_state=1 # Normal
+        fi
+        printf '\033]9;4;%d;%d\a' "$progress_state" "$progress_percent"
+      fi
+    fi
+  else
+    # Clear progress bar when context is empty or not sent
+    if [ "$show_progress" = "1" ]; then
+      # OSC 9;4 with state 0 (hidden) clears the progress bar
+      printf '\033]9;4;0;0\a'
+    fi
+  fi
+
+  #
+  # Write status to file for tmux integration
+  #
+  tmux_status_file="/tmp/claude-status-${session_id:-unknown}"
+  {
+    printf '{"model":"%s","cost":"%s","context":"%s","session":"%s","timestamp":%d}\n' \
+      "${short_model:-}" \
+      "${formatted_cost:-}" \
+      "${percent_used:-0}" \
+      "${session_id:-}" \
+      "$(date +%s)"
+  } > "$tmux_status_file"
+  ln -sf "$tmux_status_file" /tmp/claude-status-latest
+fi
+
+# Allow overriding starship command for testing
+# Set STARSHIP_CMD to use a custom command (e.g., 'env' for testing)
+starship_cmd="${STARSHIP_CMD:-starship}"
+
+# Determine Starship config path
+# Priority: --config flag > default location
+if [ -z "$starship_config" ]; then
+  starship_config="$HOME/.claude/starship.toml"
+fi
+
+# Force non-zsh-style output so we don't get %{%} markers
+STARSHIP_CONFIG="$starship_config" \
+  STARSHIP_SHELL=sh \
+  "$starship_cmd" prompt

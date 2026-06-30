@@ -1,0 +1,75 @@
+{
+  "_comment": "Portable baseline for ~/.claude/settings.json. This is a REFERENCE, not a live symlink: setup commands and plugin installers write directly to ~/.claude/settings.json, so keep that file local and copy the keys you want from here. Machine and work-specific keys (env, enabledPlugins, extraKnownMarketplaces, pluginConfigs) are intentionally omitted.",
+  "fileSuggestion": {
+    "type": "command",
+    "command": "~/.claude/file-suggestion.sh"
+  },
+  "model": "claude-fable-5[1m]",
+  "editorMode": "vim",
+  "effortLevel": "medium",
+  "tui": "default",
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.local/bin/starship-claude"
+  },
+  "skillOverrides": {
+    "diffity-review": "off"
+  },
+  "skipWorkflowUsageWarning": true,
+  "skipAutoPermissionPrompt": true,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "comment": "Optional: requires RTK installed (see RTK.md). Remove if not using RTK.",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/rtk-rewrite.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Claude Code needs your attention\" with title \"Claude Code\"'"
+          }
+        ]
+      }
+    ]
+  },
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "Chunking bacon",
+      "Poignantly pondering",
+      "Befriending foxes",
+      "Dwemthy arraying",
+      "Expanding minds",
+      "Hacking joyfully",
+      "Lacing shoes",
+      "Cartoon dreaming",
+      "Metaprogramming foxily",
+      "Printing miracles",
+      "Trying things",
+      "Sparking whimsy",
+      "Summoning sidekicks",
+      "Wearing wigs",
+      "Escaping arrays",
+      "Tickling Ruby",
+      "Mixin magic",
+      "Yielding blocks",
+      "Singing to procs",
+      "Dancing lambdas"
+    ]
+  }
+}
