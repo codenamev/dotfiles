@@ -1,5 +1,5 @@
 [init]
-  defaultBranch = main
+defaultBranch = main
   templatedir = ~/.git_template
 [rerere]
   enabled = 1
@@ -14,6 +14,7 @@
   branches = for-each-ref --sort=-committerdate --format=\"%(color:blue)%(authordate:relative)\t%(color:red)%(authorname)\t%(color:white)%(color:bold)%(refname:short)\" refs/remotes
   ci = commit -v
   co = checkout
+
   pf = push --force-with-lease
   st = status -sb
 [core]
@@ -29,17 +30,22 @@
   autosquash = true
 [diff]
   colorMoved = zebra
+[github]
+	site = https://github.com
+	endpoint = https://api.github.com
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	required = true
+	process = git-lfs filter-process
 [merge]
   ff = only
+[gpg]
+	program = gpg
 [user]
-  name = Valentino Stoll
-  email = v@codenamev.com
-	signingkey = /Users/valentino.stoll/.ssh/id_ed25519.pub
+	name = Valentino Stoll
+	email = v@codenamev.com
 [include]
   path = ~/.gitconfig.local
-[gpg]
-	format = ssh
-[safe]
-	directory = /workspace
-[url "git@github.com:"]
-	insteadOf = https://github.com/
+  path = ~/.gitconfig.reflow
+  path = ~/.gitconfig.commander

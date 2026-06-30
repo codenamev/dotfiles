@@ -17,11 +17,13 @@ db/*.sqlite3
 log/*.log
 rerun.txt
 tmp/**/*
-/tags
 Workflow
+/tags
 vendor/cache/*-darwin.gem
 .irb_history
 .aider.*
 .architecture/reviews/*
 # Cursor artifacts
 .diary/
+
+**/.claude/settings.local.json

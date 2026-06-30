@@ -5,3 +5,6 @@ elif [ -d "~/.linuxbrew" ]; then
 elif [ -d "/home/linuxbrew" ]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
+
+# Local config
+[[ -f ~/.zprofile.local ]] && source ~/.zprofile.local

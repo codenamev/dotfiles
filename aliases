@@ -56,6 +56,11 @@ alias -- -="cd -"
 # cd to directory and create if it doesn't exist
 alias take='mcd'
 
+# Include custom aliases
+if [[ -f ~/.aliases.local ]]; then
+  source ~/.aliases.local
+fi
+
 # Migrane solvents
 # clear idiotic hidden OS X file attributes for downloaded files
 alias fuckxattr='xattr -c -r'
@@ -68,8 +73,3 @@ alias redirect-popper="curl -LIs -o /dev/null -w '%{url_effective}'"
 alias tmux-current-session-name="tmux display-message -p '#S'"
 alias tmux-last-pane-number="tmux list-panes -F '#P' | tail -n1"
 alias mux="tmuxinator || gem install tmuxinator && tmuxinator"
-
-# Include custom aliases
-if [[ -f ~/.aliases.local ]]; then
-  source ~/.aliases.local
-fi

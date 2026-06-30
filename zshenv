@@ -20,9 +20,7 @@ if [[ $PATH != $_old_path ]]; then
 ${fg[red]}Warning:${reset_color} your \`~/.zshenv.local' configuration seems to edit PATH entries.
 Please move that configuration to \`.zshrc.local' like so:
   ${fg_bold[white]}cat ~/.zshenv.local >> ~/.zshrc.local && rm ~/.zshenv.local${reset_color}
-
 (called from ${(%):-%N:%i})
-
 MSG
 fi
 
@@ -32,7 +30,7 @@ unset _old_path
 if type mcfly &>/dev/null ; then
   eval "$(mcfly init zsh)"
 fi
-. "$HOME/.cargo/env"
+[[ -f ~/.cargo/env ]] && . "$HOME/.cargo/env"
 
 # claude-memory: local fastembed embeddings (set up 2026-06-08)
 export CLAUDE_MEMORY_EMBEDDING_PROVIDER=fastembed
