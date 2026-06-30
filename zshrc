@@ -55,3 +55,12 @@ eval "$(starship init zsh)"
 
 . "$HOME/.local/bin/env"
 
+
+# claude: expand --fs to --fork-session (works with -c/-r)
+claude() {
+  local args=()
+  for arg in "$@"; do
+    [[ "$arg" == "--fs" ]] && args+=("--fork-session") || args+=("$arg")
+  done
+  command claude "${args[@]}"
+}
