@@ -68,3 +68,12 @@ export PATH="$HOME/src/bin:$PATH"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# claude: expand --fs to --fork-session (works with -c/-r)
+claude() {
+  local args=()
+  for arg in "$@"; do
+    [[ "$arg" == "--fs" ]] && args+=("--fork-session") || args+=("$arg")
+  done
+  command claude "${args[@]}"
+}
