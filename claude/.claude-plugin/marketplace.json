@@ -1,0 +1,13 @@
+{
+  "name": "codenamev",
+  "owner": {
+    "name": "Valentino Stoll"
+  },
+  "plugins": [
+    {
+      "name": "dx",
+      "source": "./plugins/dx",
+      "description": "Personal developer-experience skills: fan-out orchestration, variable naming, prose de-AI-ing, doc claim review, architecture-ledger shaping, PR notes, session task tracking."
+    }
+  ]
+}

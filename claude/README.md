@@ -39,6 +39,28 @@ Then, two manual steps the installer cannot safely automate:
    `settings.shared.json`. The live file stays local because setup commands and
    plugin installers write to it directly.
 
+## Skills plugin (`dx`)
+
+`plugins/dx/` bundles portable, self-authored skills as an installable plugin.
+This directory doubles as a local plugin marketplace (`.claude-plugin/marketplace.json`).
+
+| Skill | What it does |
+|-------|--------------|
+| `fan-out` | Decompose a task into independent slices, run subagents concurrently, synthesize |
+| `name-variable` | Suggest ranked identifier names with rationale (verb taxonomy, specificity ladders) |
+| `humanize-prose` | Strip AI tells from a draft; ships a metric script to verify |
+| `doc-claim-review` | Flag unsourced claims / unattributed decisions / bloat in a markdown draft |
+| `architecture-ledger` | Shape an architectural tradeoff doc into tight prose |
+| `pr-notes` | Per-PR cross-session scratchpad in `~/.claude/pr-reviews/` (never posts) |
+| `session-task-tracker` | Local task tracking with optional Notion dashboard sync |
+
+Install:
+
+```bash
+claude plugin marketplace add ~/dotfiles/claude
+claude plugin install dx@codenamev
+```
+
 ## Intentionally excluded (stays local / never committed)
 
 - **Secrets:** `.credentials.json`, `auth-cache.json`, `*-auth-*`
