@@ -129,13 +129,13 @@ You MAY write actual test code that FAILS - human writes implementation to make 
 
 ```ruby
 # Example: You write this
-it "validates presence of bank account when wire instructions selected" do
-  form = ModularTasks::TaskAssignmentForm.new(customer: customer)
-  form.task_names = ["wire_instructions"]
-  form.organization_bank_account_id = nil
+it "validates presence of billing address when invoice delivery selected" do
+  form = OrderForm.new(customer: customer)
+  form.delivery_methods = ["invoice"]
+  form.billing_address_id = nil
 
   expect(form.valid?).to be false
-  expect(form.errors[:organization_bank_account_id]).to include("can't be blank")
+  expect(form.errors[:billing_address_id]).to include("can't be blank")
 end
 
 # Human implements validation to make it pass
@@ -253,7 +253,7 @@ CURRENT_MODE: Navigator
 
 [Runs Grep to find TODOs]
 
-Found 3 TODOs in the modular_tasks code:
+Found 3 TODOs in the orders form code:
 1. View line 2: Label patterns - using explicit labels
 2. View line 20: Task selection logic in view
 3. Form line 55: Validation group refactoring
@@ -275,15 +275,15 @@ CURRENT_MODE: Navigator
 
 Found 3 TODOs. Here's how to fix them:
 
-In app/views/modular_tasks/tasks/edit.html.slim:38:
-- Replace `= f.label :organization_bank_account_id, 'Bank Account'`
-- With `= f.label :organization_bank_account_id`
+In app/views/orders/edit.html.slim:38:
+- Replace `= f.label :billing_address_id, 'Billing Address'`
+- With `= f.label :billing_address_id`
 
 Then add to config/locales/forms/en.yml:
 forms:
   attributes:
-    modular_tasks_task_assignment_form:
-      organization_bank_account_id: "Bank Account"
+    order_form:
+      billing_address_id: "Billing Address"
 ```
 
 VIOLATION: Describes exact changes without asking about driver mode. This is implementation.
