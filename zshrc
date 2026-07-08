@@ -53,7 +53,7 @@ eval "$(starship init zsh)"
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
 
-. "$HOME/.local/bin/env"
+[[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 
 
 # claude: expand --fs to --fork-session (works with -c/-r)
