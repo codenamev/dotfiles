@@ -27,3 +27,4 @@ vendor/cache/*-darwin.gem
 .diary/
 
 **/.claude/settings.local.json
+**/.claude/memory.sqlite*
