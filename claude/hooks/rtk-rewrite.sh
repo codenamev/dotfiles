@@ -38,8 +38,12 @@ if [ -z "$CMD" ]; then
 fi
 
 # Delegate all rewrite logic to the Rust binary.
-# rtk rewrite exits 1 when there's no rewrite — hook passes through silently.
-REWRITTEN=$(rtk rewrite "$CMD" 2>/dev/null) || exit 0
+# Trust the output, not the exit code: rtk 0.43.0 exits 3 on a successful
+# rewrite despite its documented 0/1 contract. Empty output = no rewrite.
+REWRITTEN=$(rtk rewrite "$CMD" 2>/dev/null) || true
+if [ -z "$REWRITTEN" ]; then
+  exit 0
+fi
 
 # No change — nothing to do.
 if [ "$CMD" = "$REWRITTEN" ]; then
