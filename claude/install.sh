@@ -11,7 +11,8 @@
 set -o errexit -o nounset -o pipefail
 
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLAUDE_DIR="$HOME/.claude"
+# Target config dir; override for alternate setups, e.g. CLAUDE_DIR=~/.claude-zar ./install.sh
+CLAUDE_DIR="${CLAUDE_DIR:-$HOME/.claude}"
 BIN_DIR="$HOME/.local/bin"
 
 link() {
@@ -42,5 +43,5 @@ link "$SRC_DIR/hooks/rtk-rewrite.sh"          "$CLAUDE_DIR/hooks/rtk-rewrite.sh"
 
 echo
 echo "Done. Remaining manual steps:"
-echo "  - ~/.claude/CLAUDE.md: ensure first line is  @$SRC_DIR/CLAUDE.shared.md"
-echo "  - ~/.claude/settings.json: copy desired keys from settings.shared.json"
+echo "  - $CLAUDE_DIR/CLAUDE.md: ensure first line is  @$SRC_DIR/CLAUDE.shared.md"
+echo "  - $CLAUDE_DIR/settings.json: copy desired keys from settings.shared.json"
