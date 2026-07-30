@@ -15,3 +15,7 @@
 **/.claude/agent-memory-local
 **/.claude/first-run
 **/.claude/assistant-daemon-state.json
+.mcp.json
+agora.toml
+.claude/file-suggestions.cache
+.zar-env
