@@ -26,6 +26,19 @@ fi
 
 unset _old_path
 
+# chruby for ALL shells, including non-interactive ones, so scripts and
+# tool-spawned shells resolve the same ruby as the terminal. Selects the
+# newest installed ruby-* in ~/.rubies (chruby fuzzy match: last wins).
+# (2026-07-23)
+for _chruby_sh in /usr/local/share/chruby/chruby.sh /opt/homebrew/opt/chruby/share/chruby/chruby.sh; do
+  if [[ -s $_chruby_sh ]]; then
+    source $_chruby_sh
+    chruby ruby >/dev/null 2>&1
+    break
+  fi
+done
+unset _chruby_sh
+
 # Load McFly if installed
 if type mcfly &>/dev/null ; then
   eval "$(mcfly init zsh)"

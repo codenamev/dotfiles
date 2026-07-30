@@ -11,8 +11,8 @@ if type /opt/homebrew/bin/brew &>/dev/null ; then
   # Front-load brew'ed bins
   export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
   # load chruby if available
-  if [[ -s /opt/homebrew/opt/chruby/share/chruby/chruby.sh ]] ; then source /opt/homebrew/opt/chruby/share/chruby/chruby.sh ; fi
-  if [[ -s /opt/homebrew/opt/chruby/share/chruby/auto.sh ]] ; then source /opt/homebrew/opt/chruby/share/chruby/auto.sh ; fi
+  if [[ -s $(brew --prefix)/opt/chruby/share/chruby/chruby.sh ]] ; then source $(brew --prefix)/opt/chruby/share/chruby/chruby.sh ; fi
+  if [[ -s $(brew --prefix)/opt/chruby/share/chruby/auto.sh ]] ; then source $(brew --prefix)/opt/chruby/share/chruby/auto.sh ; fi
 fi
 
 # load rbenv if available
