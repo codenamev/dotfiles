@@ -33,6 +33,7 @@ link() {
 echo "Linking portable Claude customizations from $SRC_DIR"
 link "$SRC_DIR/rules/performance.md"          "$CLAUDE_DIR/rules/performance.md"
 link "$SRC_DIR/output-styles/navigator.md"    "$CLAUDE_DIR/output-styles/navigator.md"
+link "$SRC_DIR/output-styles/keeper-voice.md" "$CLAUDE_DIR/output-styles/keeper-voice.md"
 link "$SRC_DIR/file-suggestion.sh"            "$CLAUDE_DIR/file-suggestion.sh"
 link "$SRC_DIR/statusline/starship.toml"      "$CLAUDE_DIR/starship.toml"
 link "$SRC_DIR/statusline/starship-claude"    "$BIN_DIR/starship-claude"
