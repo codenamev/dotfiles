@@ -1,7 +1,7 @@
 {
   "name": "dx",
   "version": "0.1.0",
-  "description": "Personal developer-experience skills: parallel fan-out orchestration, variable naming, prose de-AI-ing, doc claim review, architecture-ledger shaping, PR notes, and session task tracking.",
+  "description": "Personal developer-experience skills: parallel fan-out orchestration, variable naming, prose de-AI-ing, doc claim review, conclusion-time rigor checks, architecture-ledger shaping, PR notes, and session task tracking.",
   "author": {
     "name": "Valentino Stoll"
   }
