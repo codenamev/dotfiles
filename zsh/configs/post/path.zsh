@@ -12,6 +12,22 @@ if type /opt/homebrew/bin/brew &>/dev/null ; then
   export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
 fi
 
+# chruby's .ruby-version auto-switching, for interactive shells. zshenv loads
+# chruby.sh itself but never auto.sh, and the only tracked load of auto.sh used
+# to sit inside the /opt/homebrew branch above -- dead on x86_64, live on arm64.
+# So it belongs here: top level (arch-neutral) and interactive-only, since
+# auto.sh hooks preexec_functions. Sourcing it twice is safe: it guards its own
+# hook registration and unsets RUBY_AUTO_VERSION on load, so a fresh load with
+# no .ruby-version in scope leaves the ruby zprofile selected alone.
+# (2026-08-27)
+for _chruby_auto in /usr/local/share/chruby/auto.sh /opt/homebrew/opt/chruby/share/chruby/auto.sh; do
+  if [[ -s $_chruby_auto ]]; then
+    source $_chruby_auto
+    break
+  fi
+done
+unset _chruby_auto
+
 # load rbenv if available
 if type rbenv &>/dev/null ; then
   eval "$(rbenv init - --no-rehash)"
