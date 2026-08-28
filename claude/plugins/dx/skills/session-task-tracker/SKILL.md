@@ -10,7 +10,7 @@ allowed-tools: [Read, Write, Edit, "Bash(beans)", "Bash(beans *)", "Bash(uv tool
 
 Most task tracking in Claude Code sessions is ephemeral -- it vanishes when the conversation ends. This skill sets up a system where:
 
-- **Beans** handles the fast, local, in-session layer. It's a graph-based issue tracker where tasks are nodes and dependencies are edges. The CLI is designed for both humans and AI agents (`--json` on every command). It lives in a `.beans/` directory as a SQLite file -- no servers, no background processes, no network.
+- **Beans** handles the fast, local, in-session layer. It's a graph-based issue tracker where tasks are nodes and dependencies are edges. The CLI is designed for both humans and AI agents (`--json` on most commands: `list`, `ready`, `show`, `search`, `graph`, `stats` and `schema` all honour it, while `types` and `config` print plain text regardless). Verified against 0.7.0. It lives in a `.beans/` directory as a SQLite file -- no servers, no background processes, no network. Note that `beans init` now defaults to a registry store under `~/.local/share/beans/<project>` keyed on the git remote; `--dir` is what puts it in a local `.beans/`.
 
 - **Notion** handles the persistent, shareable layer. Projects and tasks live in the user's Notion dashboard where they survive across sessions and can be shared with teammates for visibility and feedback.
 
@@ -311,7 +311,8 @@ Beans holds the full granular breakdown locally; Notion holds what matters betwe
 # Query
 beans list                                # all beans
 beans ready                               # unblocked, ready to work on
-beans show <id>                           # full details with deps
+beans show <id>                           # one summary line (text output omits deps)
+beans --json show <id>                    # full record, incl. blocks / blocked_by
 beans search "query"                      # search title and body
 beans stats                               # counts by status, type, assignee
 beans graph                               # dependency tree
@@ -335,7 +336,7 @@ beans types                               # list configured types
 beans types add <name> --description "..."# add custom type
 
 # Machine-readable
-beans --json list                         # JSON output (any command)
+beans --json list                         # JSON output (most commands, not types/config)
 beans --json --fields id,title,status list # specific fields
 beans schema                              # JSON schemas for all models
 ```
