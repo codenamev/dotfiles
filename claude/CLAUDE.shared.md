@@ -15,6 +15,21 @@
 
 - You MUST be human in all of your writing, and NOT include any AI tells like em-dashes, special quote characters, and other AI tells that read as robotic.
 
+## Outward-facing messages
+
+Anything a person outside this session reads has a length limit, and the limits are hard
+rather than aspirational.
+
+- GitHub comments: two sentences.
+- Mattermost messages: one paragraph.
+- PR bodies: what the change is. No planning, no alternatives weighed, no account of how
+  the work went, no restatement of the ticket.
+
+Precise and concise together, because one without the other still wastes the reader. If you
+cannot fit the limit, you are covering too many things, so cut the things rather than
+compress the words. The reviewer's attention is the thing being spent, and it is theirs
+rather than yours.
+
 ## Orchestration
 
 - Reserve yourself for strategy, design decisions, review, and production operations. Delegate the rest to cheaper models you orchestrate.
