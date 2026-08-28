@@ -20,6 +20,18 @@ Run this the moment you are about to commit a conclusion, a verdict
 (supported/refuted/inconclusive), a statistic, or a recommendation — in docs or to
 the user. Re-examine the claim *after* this check; revise the wording or add the caveat.
 
+**Ship the revised claim, not the checking.** The check is yours; its result is the
+reader's. If the check confirmed the claim, say the claim and nothing about the check: a
+plain assertion already claims to be observed, so "verified", "measured not inferred" and
+"I checked it myself" report on you rather than on the thing. If the check changed the
+claim, the corrected claim is the whole report; skip the before. If the check left the
+claim unsupported, the caveat *is* the outcome and it ships — that is this skill's entire
+point and it is not what gets cut.
+
+Where the checking goes instead: when a check taught you something a later session would
+want, write it to your memory store as one fact, and link it. A check that changed a claim
+is worth a memory; a check that confirmed one is worth nothing to anybody.
+
 Where a project has a deterministic claims gate of its own — a script that mechanically
 audits assertions — this is its human-judgment counterpart, for the calls a gate can't
 make. Nothing below depends on one existing.
