@@ -1,6 +1,10 @@
 # Starship configuration
 export STARSHIP_CONFIG="$HOME/.starship.toml"
 
+# Let gpg prompt for passphrases in this terminal. git pipes commits into gpg
+# for signing, so gpg can't find the tty on its own.
+export GPG_TTY=$TTY
+
 # load zmv for our mmv function
 autoload -U zmv
 
