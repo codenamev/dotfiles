@@ -39,6 +39,17 @@ for _chruby_sh in /usr/local/share/chruby/chruby.sh /opt/homebrew/opt/chruby/sha
 done
 unset _chruby_sh
 
+# mise shims for ALL shells, same reasoning as chruby above. After chruby so
+# the mise-managed ruby wins; interactive shells also get mise's full hook from
+# zsh/configs/post/path.zsh. (2026-09-11)
+for _mise_bin in $HOME/.local/bin/mise /opt/homebrew/bin/mise /usr/local/bin/mise; do
+  if [[ -x $_mise_bin ]]; then
+    eval "$($_mise_bin activate zsh --shims)"
+    break
+  fi
+done
+unset _mise_bin
+
 # Load McFly if installed
 if type mcfly &>/dev/null ; then
   eval "$(mcfly init zsh)"

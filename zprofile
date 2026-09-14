@@ -32,3 +32,13 @@ for _chruby_sh in /usr/local/share/chruby/chruby.sh /opt/homebrew/opt/chruby/sha
   fi
 done
 unset _chruby_sh
+
+# path_helper demotes zshenv's mise shims the same way, so re-assert them too,
+# after chruby so the mise-managed ruby wins. (2026-09-11)
+for _mise_bin in $HOME/.local/bin/mise /opt/homebrew/bin/mise /usr/local/bin/mise; do
+  if [[ -x $_mise_bin ]]; then
+    eval "$($_mise_bin activate zsh --shims)"
+    break
+  fi
+done
+unset _mise_bin

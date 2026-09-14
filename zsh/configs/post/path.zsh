@@ -36,6 +36,12 @@ elif type $HOME/.rvm/scripts/rvm &>/dev/null ; then
   [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
 fi
 
+# load mise if available. Its hook re-prepends its tool paths before every
+# prompt, so a mise-managed ruby wins over chruby/rbenv above.
+if type mise &>/dev/null ; then
+  eval "$(mise activate zsh)"
+fi
+
 # add yarn if available
 if type yarn &>/dev/null ; then
   export PATH="$PATH:`yarn global bin`"
