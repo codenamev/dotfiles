@@ -42,3 +42,14 @@ for _mise_bin in $HOME/.local/bin/mise /opt/homebrew/bin/mise /usr/local/bin/mis
   fi
 done
 unset _mise_bin
+
+# Homebrew wraps some Ruby formulae (tmuxinator, for one) in a shim that runs
+# the real binary with GEM_HOME pointed at the formula's own libexec. tmux
+# started via tmuxinator inherits that into the server, so every pane it opens
+# has GEM_HOME=/opt/homebrew/Cellar/<formula>/<version>/libexec — and a
+# `gem install` from one of those panes lands in a directory the next `brew
+# upgrade` deletes. Nothing owns that GEM_HOME but the formula, so drop it and
+# let RubyGems fall back to the ruby selected above. (2026-09-16)
+if [[ -n ${GEM_HOME-} && $GEM_HOME == */Cellar/* ]]; then
+  unset GEM_HOME
+fi
