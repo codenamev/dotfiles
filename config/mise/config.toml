@@ -2,8 +2,10 @@
 node = "26.8.2"
 ruby = "latest"
 uv = "latest"
+rust = { version = "stable", components = "clippy,rustfmt,rust-src,rust-analyzer", profile = "default" }
 
 [settings]
-idiomatic_version_file_enable_tools = ["ruby"]
+# rust: lets a project's rust-toolchain.toml win over the global pin above.
+idiomatic_version_file_enable_tools = ["ruby", "rust"]
 # gh keeps its token in the macOS keychain, which mise's gh_cli_tokens can't read.
 github.credential_command = "gh auth token"
