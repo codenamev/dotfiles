@@ -68,3 +68,8 @@ claude() {
   done
   command claude "${args[@]}"
 }
+export PATH=$PATH:$HOME/.maestro/bin
+
+# JDK 17 for Maestro (e2e-tests). Matches the temurin 17 the e2e workflows use.
+export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
+export PATH="$JAVA_HOME/bin:$PATH"
