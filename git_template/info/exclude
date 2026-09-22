@@ -19,3 +19,4 @@
 agora.toml
 .claude/file-suggestions.cache
 .zar-env
+.backpass/
