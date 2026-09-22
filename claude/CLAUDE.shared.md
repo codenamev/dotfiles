@@ -48,6 +48,25 @@ before it shipped never happened as far as the reader is concerned.
 Where the checking goes instead: when a check taught you something a later session would want,
 write it to your memory store as one fact and link it.
 
+## Writing that stands without the session
+
+The reader has the document and nothing else. Read it back as that reader before you hand it
+over, and cut whatever only parses from inside the session.
+
+- Phrases that point at the conversation: as we discussed, as noted above, per your earlier
+  message, you asked me to.
+- The machinery that produced the text: the window, the subagent, the gate, the spinoff,
+  message and session ids.
+- Narrating the work in place of its result (see Reporting what you checked).
+- A "this approach" or "the fix" with no antecedent in the document itself.
+
+Applies to published artifacts, design docs, RFCs, specs, scope docs and shared pages, PR
+bodies, tickets, and Mattermost messages.
+
+Does not apply to Plannotator gate scopes, review verdicts, board notes, the accomplishments
+log, or inter-session mailbox messages. Those cite message ids, gate ids, window names and SHAs
+on purpose. Stripping that guts them.
+
 ## Orchestration
 
 - Reserve yourself for strategy, design decisions, review, and production operations. Delegate the rest to cheaper models you orchestrate.
