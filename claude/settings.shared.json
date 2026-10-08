@@ -4,7 +4,7 @@
     "type": "command",
     "command": "~/.claude/file-suggestion.sh"
   },
-  "model": "claude-fable-5[1m]",
+  "model": "opus[1m]",
   "editorMode": "vim",
   "effortLevel": "medium",
   "tui": "default",
