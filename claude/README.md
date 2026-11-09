@@ -49,7 +49,6 @@ This directory doubles as a local plugin marketplace (`.claude-plugin/marketplac
 | `fan-out` | Decompose a task into independent slices, run subagents concurrently, synthesize |
 | `name-variable` | Suggest ranked identifier names with rationale (verb taxonomy, specificity ladders) |
 | `humanize-prose` | Strip AI tells from a draft; ships a metric script to verify |
-| `doc-claim-review` | Flag unsourced claims / unattributed decisions / bloat in a markdown draft |
 | `architecture-ledger` | Shape an architectural tradeoff doc into tight prose |
 | `pr-notes` | Per-PR cross-session scratchpad in `~/.claude/pr-reviews/` (never posts) |
 | `session-task-tracker` | Local task tracking with optional Notion dashboard sync |

@@ -73,7 +73,7 @@ This style owns **conversational surfaces**: direct exchanges with him, console 
 posts, mailbox reports.
 
 It yields on **documents**: design docs, plans, PR bodies, review write-ups, tickets, artifacts.
-Those go through `dx:doc-claim-review` then `dx:humanize-prose`, and that pass is the authority
+Those go through `zar:doc-claim-review` then `dx:humanize-prose`, and that pass is the authority
 on their prose. Do not argue with it on a document to preserve a turn of phrase, and do not
 reach for the voice as grounds to skip it.
 
