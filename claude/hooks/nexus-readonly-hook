@@ -3,8 +3,9 @@
 # code_execute is allowed in settings so read-only Nexus calls run without a
 # prompt (Val, 2026-10-21). This blocks any call that could reach a write:
 # every call_tool must name a literal tool from READ_TOOLS, checked on a real
-# parse, and indirection (send, *_eval, *_exec, method objects, binding) is
-# refused outright. Code /usr/bin/ruby 2.6 cannot parse is refused, reads too.
+# parse, and identifiers for indirection (send, *_eval, *_exec, *method,
+# binding) are refused outright. Code /usr/bin/ruby 2.6 cannot parse is
+# refused, reads too.
 #
 # One-shot writes (Val, 2026-11-17): a root-owned approval file Val creates
 # with sudo lets named ingest session ids (and named set_literal targets)
@@ -60,9 +61,6 @@ READ_TOOLS = {
     "nexus_search_inquiries", "nexus_usage_analytics",
 }
 WRITE_TOOLS = {"ingest", "set_literal"}
-# No leading word boundary: class_eval, instance_exec, public_method and the
-# like must match too.
-INDIRECTION = re.compile(r"(send|method)\s*[\(:{]|(eval|exec)\b|\b(binding|ObjectSpace|const_get)\b")
 CALL = re.compile(r"\bcall_tool\b")
 LITERAL_CALL = re.compile(r"""\bcall_tool\s*\(?\s*(?:"([a-z_]+)"|'([a-z_]+)'|:([a-z_]+))""")
 
@@ -88,6 +86,10 @@ abort("not UTF-8") unless code.valid_encoding?
 tree = Ripper.sexp(code)
 abort("does not parse") unless tree
 toks = Ripper.lex(code)
+# Identifiers only (methods, variables, symbols, constants), never string
+# contents, so a query about "plugin eval" is still a read.
+DISPATCH = /(send|eval|exec|method)\z|\A(binding|ObjectSpace|const_get)\z/
+dispatch = toks.select { |t| (t[1] == :on_ident || t[1] == :on_const) && t[2] =~ DISPATCH }.map { |t| t[2] }.uniq
 LOOPS = %i[method_add_block brace_block do_block lambda def defs while until while_mod until_mod for].freeze
 calls = []
 handled = 0
@@ -170,7 +172,7 @@ walk = lambda do |node, looped|
 end
 
 walk.call(tree, false)
-puts JSON.generate("calls" => calls, "unhandled" => idents - handled, "redo_or_retry" => redo_or_retry)
+puts JSON.generate("calls" => calls, "unhandled" => idents - handled, "redo_or_retry" => redo_or_retry, "dispatch" => dispatch)
 '''
 
 
@@ -255,6 +257,8 @@ def arg(call, key):
 def classify(code, seen):
     """Parse every call_tool, reads included; return the tree and its write tools."""
     tree = parse(code)
+    if tree["dispatch"]:
+        block(f"dynamic dispatch ({', '.join(tree['dispatch'])}) is not allowed.")
     if tree["unhandled"]:
         block("every call_tool must be a direct call with a literal tool name.")
     if len(tree["calls"]) != seen:
@@ -332,9 +336,6 @@ def consume(approval_sha, keys):
 event = json.load(sys.stdin)
 code = (event.get("tool_input") or {}).get("code", "")
 
-if INDIRECTION.search(code):
-    block("dynamic dispatch (send/eval/exec/method/binding) is not allowed.")
-
 names = [a or b or c for a, b, c in LITERAL_CALL.findall(code)]
 if len(names) != len(CALL.findall(code)):
     block("every call_tool must name its tool as a literal string.")
@@ -344,11 +345,11 @@ if writes - WRITE_TOOLS:
     block(f"not a read tool: {', '.join(sorted(writes - WRITE_TOOLS))}.")
 # The regex sees only the first literal after call_tool, so
 # call_tool("search".sub("search", "ingest")) looks like a read. The parse
-# decides, for reads too.
-if names:
-    tree, parsed_writes = classify(code, len(names))
-    writes |= parsed_writes
-    if writes:
-        consume(*wanted(tree, writes))
+# decides, for every call_execute, since send("call_" + "tool", ...) names
+# no call_tool at all.
+tree, parsed_writes = classify(code, len(names))
+writes |= parsed_writes
+if writes:
+    consume(*wanted(tree, writes))
 
 sys.exit(0)

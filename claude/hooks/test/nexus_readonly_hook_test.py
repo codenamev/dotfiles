@@ -110,7 +110,7 @@ def run(hook, code, home, path):
 CASES = {
     # unchanged read behaviour
     "read_query": dict(runs=[('call_tool("query", query: "SELECT 1")', 0, "")]),
-    "read_send": dict(runs=[('send(:call_tool, "ingest")', 2, "dynamic dispatch")]),
+    "read_send": dict(runs=[('send(:call_tool, "ingest")', 2, "Nexus read-only guard")]),
     "read_var_name": dict(runs=[('t = "ingest"; call_tool(t)', 2, "literal string")]),
     "read_unknown": dict(runs=[('call_tool("delete_entity", uri: "x")', 2, "not a read tool: delete_entity")]),
     # a read-looking first literal must not hide a write (Review H1)
@@ -126,6 +126,15 @@ CASES = {
     "i_instance_method": dict(runs=[('Object.instance_method(:puts)', 2, "dynamic dispatch")]),
     "i_instance_exec_do": dict(runs=[('instance_exec do\n  1\nend', 2, "dynamic dispatch")]),
     "i_define_method_block": dict(runs=[('define_method(:x) { 1 }', 2, "dynamic dispatch")]),
+    "i_send_built_name": dict(runs=[('send("call_" + "tool", "ingest", session_id: "z")', 2, "dynamic dispatch")]),
+    "i_symbol_send": dict(runs=[('x = :public_send', 2, "dynamic dispatch")]),
+    # words in string contents are not dispatch (Review re-check)
+    "r_word_eval": dict(runs=[('call_tool("search", query: "plugin eval results")', 0, "")]),
+    "r_word_exec_binding": dict(runs=[('call_tool("search", query: "exec summary of the binding constraints")', 0, "")]),
+    "r_word_method": dict(runs=[('call_tool("search", query: "payment method: card")', 0, "")]),
+    "r_word_send": dict(runs=[('call_tool("search", query: "resend (sms) flow")', 0, "")]),
+    "r_no_call_tool": dict(runs=[('1 + 1', 0, "")]),
+    "r_ruby3_syntax": dict(runs=[('call_tool("search", query: "q") => {x:}', 2, "does not parse")]),
     "i_binding": dict(runs=[('b = binding', 2, "dynamic dispatch")]),
     # approved writes
     "w_once": dict(runs=[(ingest("s1"), 0, ""), (ingest("s1"), 2, "already used")]),
@@ -229,11 +238,12 @@ SABOTAGE = {
     "content_hash": ('if pinned and arg(call, "content")["sha256"] != pinned:', "if False:", ["c_mismatch"]),
     "direct_call": ('if tree["unhandled"]:', "if False:", ["w_receiver"]),
     "set_literal_target": ('if target not in a.get("set_literal_targets", []):', "if False:", ["sl_other_uri"]),
-    "parse_reads": ("if names:\n    tree, parsed_writes", "if writes:\n    tree, parsed_writes", ["r_sub", "r_tr", "r_and"]),
+    "parse_reads": ("tree, parsed_writes = classify(code, len(names))",
+                    "tree, parsed_writes = classify(code, len(names)) if writes else ({}, set())",
+                    ["r_sub", "r_tr", "r_and", "i_send_built_name"]),
     "call_count": ('if len(tree["calls"]) != seen:', "if False:", ["r_in_string", "r_in_comment"]),
-    "indirection_prefix": ('re.compile(r"(send|method)\\s*[\\(:{]|(eval|exec)\\b|\\b(binding|ObjectSpace|const_get)\\b")',
-                           're.compile(r"\\b(send|__send__|public_send|instance_eval|eval|method)\\s*[\\(:]")',
-                           ["i_class_eval", "i_instance_exec", "i_instance_exec_do", "i_public_method", "i_instance_method", "i_binding"]),
+    "dispatch": ('if tree["dispatch"]:', "if False:", ["i_class_eval", "i_instance_exec", "i_instance_exec_do",
+                                                     "i_public_method", "i_instance_method", "i_binding", "i_send_built_name"]),
     "same_id_twice": ("if len(set(keys)) != len(keys):", "if False:", ["w_same_id_twice"]),
 }
 
