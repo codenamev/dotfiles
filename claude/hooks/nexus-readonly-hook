@@ -1,11 +1,54 @@
-#!/opt/homebrew/bin/python3 -I
+#!/usr/bin/python3 -I
 # PreToolUse guard for mcp__plugin_nexus_nexus__code_execute.
 # code_execute is allowed in settings so read-only Nexus calls run without a
 # prompt (Val, 2026-10-21). This blocks any call that could reach a write:
 # every call_tool must name a literal tool from READ_TOOLS, and indirection
 # (send, eval, method objects) is refused outright.
+#
+# One-shot writes (Val, 2026-11-17): a root-owned approval file Val creates
+# with sudo lets named ingest session ids (and named set_literal targets)
+# through once each. Every agent runs as Val's uid, so only root ownership
+# shows the file is his: an agent cannot sudo (a password is required).
+#
+#   /etc/zar/                          root:wheel 0755
+#   /etc/zar/nexus-oneshot.json        root:wheel 0644, written by Val
+#   /etc/zar/nexus-oneshot.consumed.jsonl
+#                                      Val's uid, flag sappnd (root clears it)
+#
+# Approval file (unknown keys make it invalid):
+#   {"approved_by": "valentino", "expires_at": "2026-11-19T00:00:00Z",
+#    "tools": ["ingest", "set_literal"],
+#    "session_ids": ["fizzy-5235-l01"],
+#    "content_sha256": {"fizzy-5235-l01": "<sha256 hex of the content>"},
+#    "set_literal_targets": [{"uri": "...", "predicate": "..."}]}
+#
+# A call with a write is parsed by /usr/bin/ruby's Ripper. Each write must be
+# a direct call_tool with literal keyword arguments (no interpolation, no
+# splat), outside any block, lambda, def or loop, with no retry or redo in
+# the code, so each runs at most once. Ids are consumed when the hook allows
+# the call, keyed by the approval's sha256; the approval is never rewritten.
+#
+# What this cannot prove:
+# - Only that someone with root made the approval. That is Val unless he runs
+#   a sudo command an agent wrote without reading it, or someone has his
+#   password.
+# - The guard is only as strong as its wiring. settings.json, this file and
+#   the dotfiles checkout are writable by any agent running as Val. The
+#   interpreters are root-owned (/usr/bin/python3, /usr/bin/ruby);
+#   /usr/bin/python3 finds Xcode through xcode-select (root) or DEVELOPER_DIR
+#   in the environment Claude was started with.
+# - It sees code text, not what Nexus does: content is checked only when the
+#   approval pins its hash, and one ingest may mint several entities.
+# - An id is spent when the call is allowed, not when Nexus succeeds. A failed
+#   ingest needs a new approval (any change to the file's bytes is a new one).
+import datetime
+import fcntl
+import hashlib
 import json
+import os
 import re
+import stat
+import subprocess
 import sys
 
 READ_TOOLS = {
@@ -15,14 +58,262 @@ READ_TOOLS = {
     "list_ontology_versions", "list_reference_entities",
     "nexus_search_inquiries", "nexus_usage_analytics",
 }
+WRITE_TOOLS = {"ingest", "set_literal"}
 INDIRECTION = re.compile(r"\b(send|__send__|public_send|instance_eval|eval|method)\s*[\(:]")
 CALL = re.compile(r"\bcall_tool\b")
 LITERAL_CALL = re.compile(r"""\bcall_tool\s*\(?\s*(?:"([a-z_]+)"|'([a-z_]+)'|:([a-z_]+))""")
+
+APPROVAL_DIR = "/etc/zar"
+APPROVAL_OWNER = 0
+APPEND_FLAG = stat.SF_APPEND
+APPROVAL = os.path.join(APPROVAL_DIR, "nexus-oneshot.json")
+CONSUMED = os.path.join(APPROVAL_DIR, "nexus-oneshot.consumed.jsonl")
+RUBY = "/usr/bin/ruby"
+APPROVAL_KEYS = {"approved_by", "expires_at", "tools", "session_ids", "content_sha256", "set_literal_targets"}
+ID = re.compile(r"\A[A-Za-z0-9._:-]{1,200}\Z")
+HEX64 = re.compile(r"\A[0-9a-f]{64}\Z")
+
+# Walks the parse tree and prints JSON: every call_tool call, whether it sits
+# under a block/def/loop, and its literal keyword arguments. A string literal's
+# value is evaluated only when the tree shows it is plain quoted text.
+WALKER = r'''
+require "ripper"
+require "json"
+require "digest"
+code = $stdin.read.force_encoding("UTF-8")
+abort("not UTF-8") unless code.valid_encoding?
+tree = Ripper.sexp(code)
+abort("does not parse") unless tree
+toks = Ripper.lex(code)
+LOOPS = %i[method_add_block brace_block do_block lambda def defs while until while_mod until_mod for].freeze
+calls = []
+handled = 0
+idents = 0
+redo_or_retry = false
+
+lit = lambda do |node|
+  return [nil, "not a plain string literal"] unless node.is_a?(Array) && node[0] == :string_literal
+  parts = node[1][1..-1]
+  return ["", nil] if parts.empty?
+  return [nil, "interpolated"] unless parts.all? { |p| p[0] == :@tstring_content }
+  i = toks.index { |t| t[0] == parts[0][2] && t[1] == :on_tstring_content }
+  return [nil, "not found in tokens"] unless i && i > 0 && toks[i - 1][1] == :on_tstring_beg
+  beg = toks[i - 1][2]
+  return [nil, "not a quoted string"] unless beg == '"' || beg == "'"
+  j = i
+  j += 1 while j < toks.size && toks[j][1] == :on_tstring_content
+  return [nil, "not a quoted string"] unless j < toks.size && toks[j][1] == :on_tstring_end && toks[j][2] == beg
+  [eval(toks[(i - 1)..j].map { |t| t[2] }.join), nil]
+end
+
+name_of = lambda do |node|
+  case node && node[0]
+  when :string_literal
+    v, err = lit.call(node)
+    err ? nil : v
+  when :symbol_literal
+    s = node[1]
+    s[0] == :symbol && s[1][0] == :@ident ? s[1][1] : nil
+  end
+end
+
+record = lambda do |args, line, looped|
+  handled += 1
+  c = { "line" => line, "looped" => looped, "tool" => nil, "args" => {}, "bad" => nil }
+  calls << c
+  unless args.is_a?(Array) && args[0] == :args_add_block && args[2] == false && args[1].is_a?(Array)
+    c["bad"] = "arguments are not a plain list"
+    return
+  end
+  list = args[1]
+  c["tool"] = name_of.call(list[0])
+  rest = list[1..-1]
+  return if rest.empty?
+  h = rest[0]
+  unless rest.size == 1 && h[0] == :bare_assoc_hash
+    c["bad"] = "arguments are not one literal keyword list"
+    return
+  end
+  h[1].each do |a|
+    unless a[0] == :assoc_new && a[1][0] == :@label
+      c["bad"] = "a keyword is not a plain label"
+      next
+    end
+    key = a[1][1].chomp(":")
+    if c["args"].key?(key)
+      c["bad"] = "keyword #{key} given twice"
+      next
+    end
+    v, err = lit.call(a[2])
+    c["args"][key] = err ? { "bad" => err } : { "value" => v, "sha256" => Digest::SHA256.hexdigest(v.encode("UTF-8")) }
+  end
+end
+
+walk = lambda do |node, looped|
+  return unless node.is_a?(Array)
+  if node[0] == :@ident
+    idents += 1 if node[1] == "call_tool"
+    return
+  end
+  redo_or_retry = true if node[0] == :redo || node[0] == :retry
+  if node[0] == :method_add_arg && node[1].is_a?(Array) && node[1][0] == :fcall && node[1][1][1] == "call_tool"
+    paren = node[2]
+    record.call(paren.is_a?(Array) && paren[0] == :arg_paren ? paren[1] : nil, node[1][1][2][0], looped)
+  elsif node[0] == :command && node[1].is_a?(Array) && node[1][0] == :@ident && node[1][1] == "call_tool"
+    record.call(node[2], node[1][2][0], looped)
+  end
+  inner = looped || LOOPS.include?(node[0])
+  node.each { |n| walk.call(n, inner) }
+end
+
+walk.call(tree, false)
+puts JSON.generate("calls" => calls, "unhandled" => idents - handled, "redo_or_retry" => redo_or_retry)
+'''
 
 
 def block(reason):
     print(f"Nexus read-only guard: {reason} Writes and ingest need Val's approval each time.", file=sys.stderr)
     sys.exit(2)
+
+
+def owned_safely(st, owner):
+    return st.st_uid == owner and not st.st_mode & (stat.S_IWGRP | stat.S_IWOTH)
+
+
+def load_approval():
+    try:
+        d = os.lstat(APPROVAL_DIR)
+    except OSError:
+        block(f"no approval directory {APPROVAL_DIR}.")
+    if not stat.S_ISDIR(d.st_mode) or not owned_safely(d, APPROVAL_OWNER):
+        block(f"{APPROVAL_DIR} is not a root-owned directory closed to group and other writes.")
+    try:
+        fd = os.open(APPROVAL, os.O_RDONLY | os.O_NOFOLLOW)
+    except OSError:
+        block(f"no approval file {APPROVAL} (or it is a symlink).")
+    with os.fdopen(fd, "rb") as f:
+        st = os.fstat(f.fileno())
+        if not stat.S_ISREG(st.st_mode) or not owned_safely(st, APPROVAL_OWNER):
+            block("the approval file is not a root-owned regular file closed to group and other writes.")
+        raw = f.read()
+    try:
+        a = json.loads(raw)
+    except ValueError:
+        block("the approval file is not valid JSON.")
+    if not isinstance(a, dict) or set(a) - APPROVAL_KEYS:
+        block("the approval file has unknown keys.")
+    try:
+        expires = datetime.datetime.strptime(a["expires_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+    except (KeyError, TypeError, ValueError):
+        block("the approval needs expires_at as YYYY-MM-DDTHH:MM:SSZ.")
+    if datetime.datetime.now(datetime.timezone.utc) >= expires:
+        block("the approval has expired.")
+    tools = a.get("tools")
+    ids = a.get("session_ids", [])
+    hashes = a.get("content_sha256", {})
+    targets = a.get("set_literal_targets", [])
+    ok = (
+        isinstance(a.get("approved_by"), str)
+        and isinstance(tools, list) and tools and set(tools) <= WRITE_TOOLS
+        and isinstance(ids, list) and all(isinstance(i, str) and ID.match(i) for i in ids)
+        and len(set(ids)) == len(ids)
+        and isinstance(hashes, dict) and set(hashes) <= set(ids)
+        and all(isinstance(h, str) and HEX64.match(h) for h in hashes.values())
+        and isinstance(targets, list)
+        and all(isinstance(t, dict) and set(t) == {"uri", "predicate"}
+                and all(isinstance(v, str) and v for v in t.values()) for t in targets)
+    )
+    if not ok:
+        block("the approval file is malformed.")
+    a["sha256"] = hashlib.sha256(raw).hexdigest()
+    return a
+
+
+def parse(code):
+    try:
+        r = subprocess.run([RUBY, "--disable-gems", "-e", WALKER], input=code.encode("utf-8"),
+                           capture_output=True, timeout=20, env={"PATH": "/usr/bin:/bin", "LANG": "en_US.UTF-8"})
+    except (OSError, subprocess.TimeoutExpired):
+        block(f"cannot parse the code with {RUBY}.")
+    if r.returncode != 0:
+        block("the code does not parse as plain Ruby.")
+    return json.loads(r.stdout)
+
+
+def arg(call, key):
+    v = call["args"].get(key)
+    if v is None:
+        block(f"line {call['line']}: {call['tool']} needs a {key}: argument.")
+    if "bad" in v:
+        block(f"line {call['line']}: {key}: must be a plain quoted string ({v['bad']}).")
+    return v
+
+
+def wanted(code, writes):
+    a = load_approval()
+    if writes - set(a["tools"]):
+        block(f"the approval does not list {', '.join(sorted(writes - set(a['tools'])))}.")
+    tree = parse(code)
+    if tree["unhandled"]:
+        block("every call_tool must be a direct call with a literal tool name.")
+    if tree["redo_or_retry"]:
+        block("retry and redo are not allowed with a write.")
+    keys = []
+    for call in tree["calls"]:
+        if call["tool"] not in READ_TOOLS | WRITE_TOOLS:
+            block(f"line {call['line']}: call_tool must name a known tool as a literal.")
+        if call["tool"] in READ_TOOLS:
+            continue
+        if call["bad"]:
+            block(f"line {call['line']}: {call['bad']}.")
+        if call["looped"]:
+            block(f"line {call['line']}: a write may not run inside a block, lambda, def or loop.")
+        if call["tool"] == "ingest":
+            sid = arg(call, "session_id")["value"]
+            if sid not in a["session_ids"]:
+                block(f"session_id {sid} is not in the approval.")
+            pinned = a.get("content_sha256", {}).get(sid)
+            if pinned and arg(call, "content")["sha256"] != pinned:
+                block(f"content for {sid} does not match the approved hash.")
+            keys.append(("session_id", sid))
+        else:
+            target = {"uri": arg(call, "uri")["value"], "predicate": arg(call, "predicate")["value"]}
+            if target not in a.get("set_literal_targets", []):
+                block("that set_literal target is not in the approval.")
+            keys.append(("set_literal", target["uri"] + "\n" + target["predicate"]))
+    if len(set(keys)) != len(keys):
+        block("the same approved id is used twice in one call.")
+    return a["sha256"], keys
+
+
+def consume(approval_sha, keys):
+    try:
+        fd = os.open(CONSUMED, os.O_RDWR | os.O_APPEND | os.O_NOFOLLOW)
+    except OSError:
+        block(f"no consumption log {CONSUMED} (or it is a symlink).")
+    with os.fdopen(fd, "r+", encoding="utf-8") as f:
+        st = os.fstat(f.fileno())
+        if not stat.S_ISREG(st.st_mode) or st.st_uid != os.getuid():
+            block("the consumption log is not a regular file owned by this user.")
+        if not st.st_flags & APPEND_FLAG:
+            block("the consumption log is not append-only.")
+        fcntl.flock(f, fcntl.LOCK_EX)
+        f.seek(0)
+        spent = set()
+        for line in f.read().splitlines():
+            try:
+                e = json.loads(line)
+                spent.add((e["approval_sha256"], e["kind"], e["value"]))
+            except (ValueError, KeyError, TypeError):
+                continue
+        for kind, value in keys:
+            if (approval_sha, kind, value) in spent:
+                block(f"{value.splitlines()[0]} was already used under this approval.")
+        now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        for kind, value in keys:
+            f.write(json.dumps({"ts": now, "approval_sha256": approval_sha, "kind": kind, "value": value}) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
 
 
 event = json.load(sys.stdin)
@@ -35,8 +326,10 @@ names = [a or b or c for a, b, c in LITERAL_CALL.findall(code)]
 if len(names) != len(CALL.findall(code)):
     block("every call_tool must name its tool as a literal string.")
 
-writes = sorted(set(names) - READ_TOOLS)
+writes = set(names) - READ_TOOLS
+if writes - WRITE_TOOLS:
+    block(f"not a read tool: {', '.join(sorted(writes - WRITE_TOOLS))}.")
 if writes:
-    block(f"not a read tool: {', '.join(writes)}.")
+    consume(*wanted(code, writes))
 
 sys.exit(0)
