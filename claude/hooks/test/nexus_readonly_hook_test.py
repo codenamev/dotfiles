@@ -113,6 +113,20 @@ CASES = {
     "read_send": dict(runs=[('send(:call_tool, "ingest")', 2, "dynamic dispatch")]),
     "read_var_name": dict(runs=[('t = "ingest"; call_tool(t)', 2, "literal string")]),
     "read_unknown": dict(runs=[('call_tool("delete_entity", uri: "x")', 2, "not a read tool: delete_entity")]),
+    # a read-looking first literal must not hide a write (Review H1)
+    "r_sub": dict(runs=[('call_tool("search".sub("search", "ingest"), session_id: "z", content: "w")', 2, "plain literal")]),
+    "r_tr": dict(runs=[('call_tool("search".tr("sa", "in"), session_id: "z", content: "w")', 2, "plain literal")]),
+    "r_and": dict(runs=[('call_tool("search" && "ingest", session_id: "z", content: "w")', 2, "plain literal")]),
+    "r_in_string": dict(runs=[('x = "call_tool(\'ingest\', session_id: \'s1\')"\ncall_tool("search", query: x)', 2, "string or comment")]),
+    "r_in_comment": dict(runs=[('# call_tool("ingest", session_id: "s1")\ncall_tool("search", query: "q")', 2, "string or comment")]),
+    # indirection with a prefix (Review M1)
+    "i_class_eval": dict(runs=[('Object.class_eval("1")', 2, "dynamic dispatch")]),
+    "i_instance_exec": dict(runs=[('instance_exec { 1 }', 2, "dynamic dispatch")]),
+    "i_public_method": dict(runs=[('m = public_method(:puts)', 2, "dynamic dispatch")]),
+    "i_instance_method": dict(runs=[('Object.instance_method(:puts)', 2, "dynamic dispatch")]),
+    "i_instance_exec_do": dict(runs=[('instance_exec do\n  1\nend', 2, "dynamic dispatch")]),
+    "i_define_method_block": dict(runs=[('define_method(:x) { 1 }', 2, "dynamic dispatch")]),
+    "i_binding": dict(runs=[('b = binding', 2, "dynamic dispatch")]),
     # approved writes
     "w_once": dict(runs=[(ingest("s1"), 0, ""), (ingest("s1"), 2, "already used")]),
     "w_command_form": dict(runs=[('call_tool "ingest", content: "x", session_id: "s1"', 0, "")]),
@@ -215,6 +229,11 @@ SABOTAGE = {
     "content_hash": ('if pinned and arg(call, "content")["sha256"] != pinned:', "if False:", ["c_mismatch"]),
     "direct_call": ('if tree["unhandled"]:', "if False:", ["w_receiver"]),
     "set_literal_target": ('if target not in a.get("set_literal_targets", []):', "if False:", ["sl_other_uri"]),
+    "parse_reads": ("if names:\n    tree, parsed_writes", "if writes:\n    tree, parsed_writes", ["r_sub", "r_tr", "r_and"]),
+    "call_count": ('if len(tree["calls"]) != seen:', "if False:", ["r_in_string", "r_in_comment"]),
+    "indirection_prefix": ('re.compile(r"(send|method)\\s*[\\(:{]|(eval|exec)\\b|\\b(binding|ObjectSpace|const_get)\\b")',
+                           're.compile(r"\\b(send|__send__|public_send|instance_eval|eval|method)\\s*[\\(:]")',
+                           ["i_class_eval", "i_instance_exec", "i_instance_exec_do", "i_public_method", "i_instance_method", "i_binding"]),
     "same_id_twice": ("if len(set(keys)) != len(keys):", "if False:", ["w_same_id_twice"]),
 }
 
@@ -247,6 +266,10 @@ class Shipped(unittest.TestCase):
     def test_write_with_unlisted_id_blocked(self):
         rc, err = run(HOOK, ingest("test-never-approved-id"), self.home, self.home)
         self.assertEqual(2, rc, err)
+
+    def test_read_looking_write_blocked(self):
+        code = 'call_tool("search".sub("search", "ingest"), session_id: "z", content: "w")'
+        self.assertEqual(2, run(HOOK, code, self.home, self.home)[0])
 
     def test_requires_root_and_system_append_flag(self):
         self.assertIn('APPROVAL_DIR = "/etc/zar"', SOURCE)

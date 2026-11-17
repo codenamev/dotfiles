@@ -2,8 +2,9 @@
 # PreToolUse guard for mcp__plugin_nexus_nexus__code_execute.
 # code_execute is allowed in settings so read-only Nexus calls run without a
 # prompt (Val, 2026-10-21). This blocks any call that could reach a write:
-# every call_tool must name a literal tool from READ_TOOLS, and indirection
-# (send, eval, method objects) is refused outright.
+# every call_tool must name a literal tool from READ_TOOLS, checked on a real
+# parse, and indirection (send, *_eval, *_exec, method objects, binding) is
+# refused outright. Code /usr/bin/ruby 2.6 cannot parse is refused, reads too.
 #
 # One-shot writes (Val, 2026-11-17): a root-owned approval file Val creates
 # with sudo lets named ingest session ids (and named set_literal targets)
@@ -59,7 +60,9 @@ READ_TOOLS = {
     "nexus_search_inquiries", "nexus_usage_analytics",
 }
 WRITE_TOOLS = {"ingest", "set_literal"}
-INDIRECTION = re.compile(r"\b(send|__send__|public_send|instance_eval|eval|method)\s*[\(:]")
+# No leading word boundary: class_eval, instance_exec, public_method and the
+# like must match too.
+INDIRECTION = re.compile(r"(send|method)\s*[\(:{]|(eval|exec)\b|\b(binding|ObjectSpace|const_get)\b")
 CALL = re.compile(r"\bcall_tool\b")
 LITERAL_CALL = re.compile(r"""\bcall_tool\s*\(?\s*(?:"([a-z_]+)"|'([a-z_]+)'|:([a-z_]+))""")
 
@@ -249,19 +252,29 @@ def arg(call, key):
     return v
 
 
-def wanted(code, writes):
-    a = load_approval()
-    if writes - set(a["tools"]):
-        block(f"the approval does not list {', '.join(sorted(writes - set(a['tools'])))}.")
+def classify(code, seen):
+    """Parse every call_tool, reads included; return the tree and its write tools."""
     tree = parse(code)
     if tree["unhandled"]:
         block("every call_tool must be a direct call with a literal tool name.")
+    if len(tree["calls"]) != seen:
+        block("call_tool appears inside a string or comment.")
+    for call in tree["calls"]:
+        if call["tool"] is None:
+            block(f"line {call['line']}: call_tool must name its tool as a plain literal, with nothing applied to it.")
+        if call["tool"] not in READ_TOOLS | WRITE_TOOLS:
+            block(f"not a read tool: {call['tool']}.")
+    return tree, {c["tool"] for c in tree["calls"]} & WRITE_TOOLS
+
+
+def wanted(tree, writes):
+    a = load_approval()
+    if writes - set(a["tools"]):
+        block(f"the approval does not list {', '.join(sorted(writes - set(a['tools'])))}.")
     if tree["redo_or_retry"]:
         block("retry and redo are not allowed with a write.")
     keys = []
     for call in tree["calls"]:
-        if call["tool"] not in READ_TOOLS | WRITE_TOOLS:
-            block(f"line {call['line']}: call_tool must name a known tool as a literal.")
         if call["tool"] in READ_TOOLS:
             continue
         if call["bad"]:
@@ -320,7 +333,7 @@ event = json.load(sys.stdin)
 code = (event.get("tool_input") or {}).get("code", "")
 
 if INDIRECTION.search(code):
-    block("dynamic dispatch (send/eval/method) is not allowed.")
+    block("dynamic dispatch (send/eval/exec/method/binding) is not allowed.")
 
 names = [a or b or c for a, b, c in LITERAL_CALL.findall(code)]
 if len(names) != len(CALL.findall(code)):
@@ -329,7 +342,13 @@ if len(names) != len(CALL.findall(code)):
 writes = set(names) - READ_TOOLS
 if writes - WRITE_TOOLS:
     block(f"not a read tool: {', '.join(sorted(writes - WRITE_TOOLS))}.")
-if writes:
-    consume(*wanted(code, writes))
+# The regex sees only the first literal after call_tool, so
+# call_tool("search".sub("search", "ingest")) looks like a read. The parse
+# decides, for reads too.
+if names:
+    tree, parsed_writes = classify(code, len(names))
+    writes |= parsed_writes
+    if writes:
+        consume(*wanted(tree, writes))
 
 sys.exit(0)
