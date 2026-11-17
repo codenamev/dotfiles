@@ -89,7 +89,19 @@ toks = Ripper.lex(code)
 # Identifiers only (methods, variables, symbols, constants), never string
 # contents, so a query about "plugin eval" is still a read.
 DISPATCH = /(send|eval|exec|method)\z|\A(binding|ObjectSpace|const_get)\z/
-dispatch = toks.select { |t| (t[1] == :on_ident || t[1] == :on_const) && t[2] =~ DISPATCH }.map { |t| t[2] }.uniq
+# Quoted symbols (:"send", %i[send]) lex as string content after their opener.
+SYM_OPEN = %i[on_symbeg on_qsymbols_beg on_symbols_beg].freeze
+opener = nil
+words = []
+toks.each do |t|
+  case t[1]
+  when :on_ident, :on_const then words << t[2]
+  when :on_tstring_content then words.concat(t[2].split) if opener && SYM_OPEN.include?(opener)
+  end
+  opener = t[1] if %i[on_symbeg on_qsymbols_beg on_symbols_beg on_tstring_beg on_heredoc_beg on_regexp_beg on_qwords_beg on_words_beg on_xstring_literal].include?(t[1])
+  opener = nil if t[1] == :on_tstring_end || t[1] == :on_regexp_end || t[1] == :on_heredoc_end
+end
+dispatch = words.select { |w| w =~ DISPATCH }.uniq
 LOOPS = %i[method_add_block brace_block do_block lambda def defs while until while_mod until_mod for].freeze
 calls = []
 handled = 0

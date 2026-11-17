@@ -135,6 +135,8 @@ CASES = {
     "r_word_send": dict(runs=[('call_tool("search", query: "resend (sms) flow")', 0, "")]),
     "r_no_call_tool": dict(runs=[('1 + 1', 0, "")]),
     "r_ruby3_syntax": dict(runs=[('call_tool("search", query: "q") => {x:}', 2, "does not parse")]),
+    "i_quoted_symbol": dict(runs=[('[self].map(&:"send")', 2, "dynamic dispatch")]),
+    "i_symbol_list": dict(runs=[('%i[a public_send]', 2, "dynamic dispatch")]),
     "i_binding": dict(runs=[('b = binding', 2, "dynamic dispatch")]),
     # approved writes
     "w_once": dict(runs=[(ingest("s1"), 0, ""), (ingest("s1"), 2, "already used")]),
@@ -243,7 +245,8 @@ SABOTAGE = {
                     ["r_sub", "r_tr", "r_and", "i_send_built_name"]),
     "call_count": ('if len(tree["calls"]) != seen:', "if False:", ["r_in_string", "r_in_comment"]),
     "dispatch": ('if tree["dispatch"]:', "if False:", ["i_class_eval", "i_instance_exec", "i_instance_exec_do",
-                                                     "i_public_method", "i_instance_method", "i_binding", "i_send_built_name"]),
+                                                     "i_public_method", "i_instance_method", "i_binding", "i_send_built_name",
+                                                     "i_quoted_symbol", "i_symbol_list"]),
     "same_id_twice": ("if len(set(keys)) != len(keys):", "if False:", ["w_same_id_twice"]),
 }
 
