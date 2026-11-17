@@ -90,17 +90,6 @@ def run_hook(tool, input, env = {})
   out.strip.empty? ? nil : JSON.parse(out)
 end
 
-def run_hook_payload(tool, input, extra)
-  base = {
-    "PATH" => "/usr/bin:/bin", "HOME" => TMP, "MM_TOKEN" => "test-token",
-    "AGENT_LABEL_MM_URL" => "http://127.0.0.1:#{PORT}", "AGENT_LABEL_LOG" => LOG
-  }
-  payload = JSON.generate({"hook_event_name" => "PreToolUse", "tool_name" => tool, "tool_input" => input}.merge(extra))
-  out, err, st = Open3.capture3(base, RUBY, "--disable-gems", HOOK, stdin_data: payload, unsetenv_others: true, chdir: "/")
-  raise "hook exited #{st.exitstatus}: #{err}" unless st.success?
-  out.strip.empty? ? nil : JSON.parse(out)
-end
-
 def last_outcome
   JSON.parse(File.readlines(LOG).last)["outcome"]
 end
@@ -174,52 +163,24 @@ check("server unreachable: no footer", updated(out), nil)
 out = run_hook("mcp__mattermost__compose", {"channel_id" => "pubchan", "message" => "hi"}, "MM_TOKEN" => nil)
 check("no token: skipped", last_outcome, "skipped:no MM_TOKEN")
 
-# ---- Linear and Fizzy -------------------------------------------------------------
-out = run_hook("mcp__linear-server__save_comment", {"issueId" => "CORE-1", "body" => "Looks good"})
-check("Linear comment create: footer", updated(out)&.dig("body"), "Looks good\n\n#{FOOTER}")
-out = run_hook("mcp__linear-server__save_comment", {"id" => "c1", "body" => "fixed"})
-check("Linear comment edit: untouched", out, nil)
-out = run_hook("mcp__linear-server__save_issue", {"team" => "Core", "title" => "t", "description" => "d"})
-check("Linear issue create: footer on description", updated(out)&.dig("description"), "d\n\n#{FOOTER}")
-out = run_hook("mcp__linear-server__save_issue", {"team" => "Core", "title" => "t"})
-check("Linear issue create with no description: footer alone", updated(out)&.dig("description"), "\n\n#{FOOTER}")
-out = run_hook("mcp__linear-server__save_issue", {"id" => "CORE-1", "state" => "Done"})
-check("Linear issue update: untouched", out, nil)
-out = run_hook("mcp__fizz-mcp__add_comment", {"card_number" => 1, "content" => "<p>hi</p>"})
-check("Fizzy comment: html footer", updated(out)&.dig("content"), "<p>hi</p><p><em>sent by V via local agent</em></p>")
-out = run_hook("mcp__fizz-mcp__comment_cards", {"card_numbers" => [1, 2], "content" => "hi"})
-check("Fizzy bulk comment: footer, card list kept", [updated(out)&.dig("content")&.end_with?("</em></p>"), updated(out)&.dig("card_numbers")], [true, [1, 2]])
-out = run_hook("mcp__fizz-mcp__create_card", {"title" => "t", "description" => nil})
-check("Fizzy card create: footer", updated(out)&.dig("description"), "<p><em>sent by V via local agent</em></p>")
-
-# ---- gh -----------------------------------------------------------------------------
-deny = lambda { |o| o&.dig("hookSpecificOutput", "permissionDecision") }
-check("gh pr comment without footer: denied", deny.(run_hook("Bash", {"command" => %(gh pr comment 12 --body "lgtm")})), "deny")
-check("deny reason names the line", run_hook("Bash", {"command" => %(gh pr comment 12 --body "lgtm")}).dig("hookSpecificOutput", "permissionDecisionReason").include?(FOOTER), true)
-check("gh pr comment with footer: allowed", run_hook("Bash", {"command" => %(gh pr comment 12 --body "lgtm\n\n#{FOOTER}")}), nil)
-check("gh pr create with no body: denied", deny.(run_hook("Bash", {"command" => "gh pr create --draft --fill"})), "deny")
-body = File.join(TMP, "body.md")
-File.write(body, "What it does.\n\n#{FOOTER}\n")
-check("gh pr create --body-file with footer: allowed", run_hook("Bash", {"command" => "gh pr create --draft --title t --body-file #{body}"}), nil)
-File.write(body, "What it does.\n")
-check("gh pr create --body-file without footer: denied", deny.(run_hook("Bash", {"command" => "gh pr create --draft --title t --body-file #{body}"})), "deny")
-check("gh issue comment without footer: denied", deny.(run_hook("Bash", {"command" => %(gh issue comment 3 -b "x")})), "deny")
-check("gh pr review --approve with no body: allowed", run_hook("Bash", {"command" => "gh pr review 12 --approve"}), nil)
-check("gh pr review with a body: denied", deny.(run_hook("Bash", {"command" => %(gh pr review 12 --comment -b "nit")})), "deny")
-check("gh pr edit: not matched", run_hook("Bash", {"command" => %(gh pr edit 12 --body "x")}), nil)
-check("gh pr view: not matched", run_hook("Bash", {"command" => "gh pr view 12"}), nil)
-check("unrelated Bash: not matched", run_hook("Bash", {"command" => "ls"}), nil)
-check("quoted gh in an ag pattern: not matched", run_hook("Bash", {"command" => "ag 'gh pr create' bin/"}), nil)
-check("gh in a commit message: not matched", run_hook("Bash", {"command" => %(git commit -m "deny gh pr comment without footer")}), nil)
-check("gh in a zar-say body: not matched", run_hook("Bash", {"command" => %(zar-say Review "run gh pr create later")}), nil)
-check("gh after &&: matched", deny.(run_hook("Bash", {"command" => %(cd x && gh pr comment 1 --body "y")})), "deny")
-check("gh with an env prefix: matched", deny.(run_hook("Bash", {"command" => %(GH_HOST=x gh issue create -b "y")})), "deny")
-check("gh after a newline: matched", deny.(run_hook("Bash", {"command" => %(cd x\ngh pr comment 1 -b "y")})), "deny")
-Dir.mkdir(File.join(TMP, "repo")) unless Dir.exist?(File.join(TMP, "repo"))
-File.write(File.join(TMP, "repo", "pr.md"), "Body.\n\n#{FOOTER}\n")
-rel = lambda { |cwd| run_hook_payload("Bash", {"command" => "gh pr create --draft --title t --body-file pr.md"}, "cwd" => cwd) }
-check("relative --body-file resolves against the payload cwd", rel.(File.join(TMP, "repo")), nil)
-check("and is denied when the cwd holds no such labelled file", deny.(rel.(TMP)), "deny")
+# ---- nothing but Mattermost ------------------------------------------------------
+# GitHub, Linear and Fizzy text goes out as written, even if the hook is
+# registered on those tools: no rewrite, no deny, no log line.
+lines = File.readlines(LOG).size
+[
+  ["Bash", {"command" => %(gh pr comment 12 --body "lgtm")}],
+  ["Bash", {"command" => "gh pr create --draft --fill"}],
+  ["Bash", {"command" => %(cd x && gh pr review 12 --comment -b "nit")}],
+  ["Bash", {"command" => %(gh issue comment 3 -b "x")}],
+  ["mcp__linear-server__save_comment", {"issueId" => "CORE-1", "body" => "Looks good"}],
+  ["mcp__linear-server__save_issue", {"team" => "Core", "title" => "t", "description" => "d"}],
+  ["mcp__fizz-mcp__add_comment", {"card_number" => 1, "content" => "<p>hi</p>"}],
+  ["mcp__fizz-mcp__comment_cards", {"card_numbers" => [1, 2], "content" => "hi"}],
+  ["mcp__fizz-mcp__create_card", {"title" => "t", "description" => "d"}]
+].each do |tool, input|
+  check("#{tool} #{input.values.first}: untouched", run_hook(tool, input), nil)
+end
+check("and none of them is logged", File.readlines(LOG).size, lines)
 
 # ---- other tools ------------------------------------------------------------------
 check("other MCP tools: untouched", run_hook("mcp__mattermost__react", {"post_id" => "p", "emoji" => "+1"}), nil)
