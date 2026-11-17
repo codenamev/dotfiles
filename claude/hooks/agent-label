@@ -141,7 +141,6 @@ module AgentLabel
       return :label
     end
     channel = input["channel_id"].to_s
-    raise LookupError, "no channel_id" if channel.empty?
     return [:exempt, "mention-bot"] if mentions_bot?(message)
     return [:exempt, "dm-bot"] if dm_with_bot?(channel)
     root = input["root_id"].to_s
@@ -154,15 +153,19 @@ module AgentLabel
 
   # ---- gh ------------------------------------------------------------------
 
-  GH = /\bgh\s+(?:pr\s+(?:create|comment|review)|issue\s+(?:create|comment))\b/
+  # gh only in command position: start of the command or after ; & | ( $( or a
+  # newline, past any VAR=value prefixes. A quoted 'gh pr create' inside an ag
+  # pattern, a commit message or a zar-say body is not a gh call.
+  GH = /(?:\A|[;&|(\n]|\$\()\s*(?:\w+=\S*\s+)*gh\s+(?:pr\s+(?:create|comment|review)|issue\s+(?:create|comment))\b/
   BODY_FLAG = /(?:\s|^)(?:--body|-b|--body-file|-F)(?:[\s=]|$)/
   BODY_FILE = /(?:--body-file|-F)[\s=]+(?:"([^"]+)"|'([^']+)'|(\S+))/
 
-  def gh_needs_label?(command)
+  def gh_needs_label?(command, cwd = Dir.pwd)
     return false unless GH.match?(command)
     return false if labelled?(command)
     file = command.scan(BODY_FILE).map(&:compact).flatten.first
-    return false if file && File.file?(File.expand_path(file)) && labelled?(File.read(File.expand_path(file)))
+    path = file && File.expand_path(file, cwd)
+    return false if path && File.file?(path) && labelled?(File.read(path))
     # gh pr review --approve with no body posts no text of Val's.
     return false if command =~ /\bgh\s+pr\s+review\b/ && !BODY_FLAG.match?(command)
     true
@@ -205,7 +208,7 @@ module AgentLabel
     if tool == "Bash"
       cmd = input["command"].to_s
       return nil unless GH.match?(cmd)
-      unless gh_needs_label?(cmd)
+      unless gh_needs_label?(cmd, payload["cwd"].to_s.empty? ? Dir.pwd : payload["cwd"])
         log(tool, labelled?(cmd) ? "labelled" : "exempt:gh-no-body")
         return nil
       end
@@ -223,6 +226,16 @@ module AgentLabel
     if labelled?(input[field])
       log(tool, "exempt:already-labelled")
       return nil
+    end
+
+    # mm-mcp posts to its "current channel" when channel_id is left out, and the
+    # hook cannot see which channel that is, so it cannot tell a legate's DM
+    # from a person's. Ask for the id rather than post unlabelled.
+    if tool == "mcp__mattermost__compose" && input["channel_id"].to_s.empty?
+      log(tool, "denied:no-channel-id")
+      return {"hookSpecificOutput" => {"hookEventName" => "PreToolUse",
+                                       "permissionDecision" => "deny",
+                                       "permissionDecisionReason" => "[agent-label] Pass channel_id explicitly. The agent label needs to know which channel this goes to, to leave legate DMs unlabelled; the current channel is not visible to the hook."}}
     end
 
     if tool.start_with?("mcp__mattermost__")

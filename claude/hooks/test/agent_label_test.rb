@@ -90,6 +90,17 @@ def run_hook(tool, input, env = {})
   out.strip.empty? ? nil : JSON.parse(out)
 end
 
+def run_hook_payload(tool, input, extra)
+  base = {
+    "PATH" => "/usr/bin:/bin", "HOME" => TMP, "MM_TOKEN" => "test-token",
+    "AGENT_LABEL_MM_URL" => "http://127.0.0.1:#{PORT}", "AGENT_LABEL_LOG" => LOG
+  }
+  payload = JSON.generate({"hook_event_name" => "PreToolUse", "tool_name" => tool, "tool_input" => input}.merge(extra))
+  out, err, st = Open3.capture3(base, RUBY, "--disable-gems", HOOK, stdin_data: payload, unsetenv_others: true, chdir: "/")
+  raise "hook exited #{st.exitstatus}: #{err}" unless st.success?
+  out.strip.empty? ? nil : JSON.parse(out)
+end
+
 def last_outcome
   JSON.parse(File.readlines(LOG).last)["outcome"]
 end
@@ -154,7 +165,10 @@ check("failed lookup: no footer", updated(out), nil)
 check("failed lookup: says so in context", out&.dig("hookSpecificOutput", "additionalContext")&.include?("No agent label"), true)
 check("failed lookup: logged as a skip", last_outcome.start_with?("skipped:"), true)
 out = run_hook("mcp__mattermost__compose", {"message" => "hi"})
-check("no channel_id (current channel unknown): skipped", last_outcome, "skipped:no channel_id")
+check("no channel_id (current channel unknown): denied", out&.dig("hookSpecificOutput", "permissionDecision"), "deny")
+check("and logged", last_outcome, "denied:no-channel-id")
+out = run_hook("mcp__mattermost__compose", {"post_id" => "p1", "message" => "edit"})
+check("an edit with no channel_id is still untouched", out, nil)
 out = run_hook("mcp__mattermost__compose", {"channel_id" => "pubchan", "message" => "hi"}, "AGENT_LABEL_MM_URL" => "http://127.0.0.1:1")
 check("server unreachable: no footer", updated(out), nil)
 out = run_hook("mcp__mattermost__compose", {"channel_id" => "pubchan", "message" => "hi"}, "MM_TOKEN" => nil)
@@ -195,6 +209,17 @@ check("gh pr review with a body: denied", deny.(run_hook("Bash", {"command" => %
 check("gh pr edit: not matched", run_hook("Bash", {"command" => %(gh pr edit 12 --body "x")}), nil)
 check("gh pr view: not matched", run_hook("Bash", {"command" => "gh pr view 12"}), nil)
 check("unrelated Bash: not matched", run_hook("Bash", {"command" => "ls"}), nil)
+check("quoted gh in an ag pattern: not matched", run_hook("Bash", {"command" => "ag 'gh pr create' bin/"}), nil)
+check("gh in a commit message: not matched", run_hook("Bash", {"command" => %(git commit -m "deny gh pr comment without footer")}), nil)
+check("gh in a zar-say body: not matched", run_hook("Bash", {"command" => %(zar-say Review "run gh pr create later")}), nil)
+check("gh after &&: matched", deny.(run_hook("Bash", {"command" => %(cd x && gh pr comment 1 --body "y")})), "deny")
+check("gh with an env prefix: matched", deny.(run_hook("Bash", {"command" => %(GH_HOST=x gh issue create -b "y")})), "deny")
+check("gh after a newline: matched", deny.(run_hook("Bash", {"command" => %(cd x\ngh pr comment 1 -b "y")})), "deny")
+Dir.mkdir(File.join(TMP, "repo")) unless Dir.exist?(File.join(TMP, "repo"))
+File.write(File.join(TMP, "repo", "pr.md"), "Body.\n\n#{FOOTER}\n")
+rel = lambda { |cwd| run_hook_payload("Bash", {"command" => "gh pr create --draft --title t --body-file pr.md"}, "cwd" => cwd) }
+check("relative --body-file resolves against the payload cwd", rel.(File.join(TMP, "repo")), nil)
+check("and is denied when the cwd holds no such labelled file", deny.(rel.(TMP)), "deny")
 
 # ---- other tools ------------------------------------------------------------------
 check("other MCP tools: untouched", run_hook("mcp__mattermost__react", {"post_id" => "p", "emoji" => "+1"}), nil)
