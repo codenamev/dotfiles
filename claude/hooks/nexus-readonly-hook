@@ -1,0 +1,42 @@
+#!/opt/homebrew/bin/python3 -I
+# PreToolUse guard for mcp__plugin_nexus_nexus__code_execute.
+# code_execute is allowed in settings so read-only Nexus calls run without a
+# prompt (Val, 2026-10-21). This blocks any call that could reach a write:
+# every call_tool must name a literal tool from READ_TOOLS, and indirection
+# (send, eval, method objects) is refused outright.
+import json
+import re
+import sys
+
+READ_TOOLS = {
+    "search", "query", "ontology", "whoami",
+    "get_brief", "list_briefs", "get_ontology_turtle", "get_receipt", "receipts",
+    "list_entities", "list_deleted", "list_distillation_groups",
+    "list_ontology_versions", "list_reference_entities",
+    "nexus_search_inquiries", "nexus_usage_analytics",
+}
+INDIRECTION = re.compile(r"\b(send|__send__|public_send|instance_eval|eval|method)\s*[\(:]")
+CALL = re.compile(r"\bcall_tool\b")
+LITERAL_CALL = re.compile(r"""\bcall_tool\s*\(?\s*(?:"([a-z_]+)"|'([a-z_]+)'|:([a-z_]+))""")
+
+
+def block(reason):
+    print(f"Nexus read-only guard: {reason} Writes and ingest need Val's approval each time.", file=sys.stderr)
+    sys.exit(2)
+
+
+event = json.load(sys.stdin)
+code = (event.get("tool_input") or {}).get("code", "")
+
+if INDIRECTION.search(code):
+    block("dynamic dispatch (send/eval/method) is not allowed.")
+
+names = [a or b or c for a, b, c in LITERAL_CALL.findall(code)]
+if len(names) != len(CALL.findall(code)):
+    block("every call_tool must name its tool as a literal string.")
+
+writes = sorted(set(names) - READ_TOOLS)
+if writes:
+    block(f"not a read tool: {', '.join(writes)}.")
+
+sys.exit(0)
