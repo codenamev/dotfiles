@@ -1,0 +1,257 @@
+#!/usr/bin/env -S ruby --disable-gems
+# PreToolUse hook: label what an agent session posts under Val's own accounts.
+#
+# Appends an italic footer line, "sent by V via local agent" (or "cloud agent"
+# when CLAUDE_CODE_REMOTE is set), to Mattermost posts and DMs, Linear comments
+# and new issues, and Fizzy comments and new cards. For gh it refuses the call
+# until the body carries the footer, because a shell command's body can be a
+# heredoc, a file or a variable and rewriting it in place is fragile.
+#
+# No footer on anything addressed to a legate: a DM to a bot, a post that
+# @-mentions a bot, or a reply in a thread where a legate whose script parses
+# whole lines of human text has posted (PARSER_LEGATES). Marshal's gate reads
+# Val's pulse line by line and refuses one with a line it does not know, and
+# his "stop" stops matching once a second line is added. Edits are never
+# touched: the edited text goes out word for word.
+#
+# Any Mattermost lookup that fails means no footer. A missing label is the
+# cheaper failure than breaking a legate. Every decision is logged, without
+# message text, to AGENT_LABEL_LOG (default ~/.local/state/agent-label/log.jsonl)
+# so the skip rate can be measured.
+#
+# usage: reads a hook payload as JSON on stdin.
+require "json"
+require "net/http"
+require "uri"
+require "fileutils"
+require "time"
+
+module AgentLabel
+  module_function
+
+  WHO = ENV.fetch("AGENT_LABEL_WHO", "V")
+  PATTERN = /sent by #{Regexp.escape(WHO)} via (?:local|cloud) agent/
+  TIMEOUT = 2
+
+  # Legates whose scripts parse whole lines of a person's text in threads they
+  # post in. Other bots in a thread do not exempt it. Bot user id => nickname.
+  PARSER_LEGATES = {
+    "b95ou57fj3rctq5t9amz5asbse" => "Marshal"
+  }.freeze
+
+  BROADCAST = %w[here channel all].freeze
+
+  def where
+    %w[1 true yes].include?(ENV["CLAUDE_CODE_REMOTE"].to_s.strip.downcase) ? "cloud" : "local"
+  end
+
+  def text
+    "sent by #{WHO} via #{where} agent"
+  end
+
+  def labelled?(s)
+    PATTERN.match?(s.to_s)
+  end
+
+  def markdown(s)
+    "#{s.to_s.rstrip}\n\n_#{text}_"
+  end
+
+  def html(s)
+    "#{s}<p><em>#{text}</em></p>"
+  end
+
+  def log_path
+    ENV.fetch("AGENT_LABEL_LOG", File.join(Dir.home, ".local", "state", "agent-label", "log.jsonl"))
+  end
+
+  def log(tool, outcome)
+    FileUtils.mkdir_p(File.dirname(log_path))
+    File.open(log_path, "a") do |f|
+      f.puts JSON.generate("ts" => Time.now.utc.iso8601, "tool" => tool, "where" => where, "outcome" => outcome)
+    end
+  rescue StandardError
+    nil
+  end
+
+  # ---- Mattermost reads ------------------------------------------------------
+
+  class LookupError < StandardError; end
+
+  def mm_get(path, body: nil)
+    base = ENV["AGENT_LABEL_MM_URL"] || ENV["MM_URL"] || "https://mattermost.zarhq.dev"
+    token = ENV["MM_TOKEN"].to_s
+    raise LookupError, "no MM_TOKEN" if token.empty?
+    uri = URI.join(base.end_with?("/") ? base : "#{base}/", path.sub(%r{\A/}, ""))
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == "https"
+    http.open_timeout = http.read_timeout = TIMEOUT
+    req = body ? Net::HTTP::Post.new(uri) : Net::HTTP::Get.new(uri)
+    req["Authorization"] = "Bearer #{token}"
+    if body
+      req["Content-Type"] = "application/json"
+      req.body = JSON.generate(body)
+    end
+    res = http.request(req)
+    raise LookupError, "#{path.split("/")[3]} #{res.code}" unless res.is_a?(Net::HTTPSuccess)
+    JSON.parse(res.body)
+  rescue LookupError
+    raise
+  rescue StandardError => e
+    raise LookupError, "#{e.class.name.split("::").last}"
+  end
+
+  def bot_user?(id)
+    mm_get("/api/v4/users/#{id}")["is_bot"] == true
+  end
+
+  def mentions(message)
+    message.to_s.scan(/(?<![\w@])@([a-z0-9][a-z0-9._-]*)/i).flatten
+           .map { |m| m.downcase.sub(/[._-]+\z/, "") }
+           .reject { |m| BROADCAST.include?(m) }.uniq
+  end
+
+  def mentions_bot?(message)
+    names = mentions(message)
+    return false if names.empty?
+    users = mm_get("/api/v4/users/usernames", body: names)
+    users.any? { |u| u["is_bot"] == true }
+  end
+
+  def dm_with_bot?(channel_id)
+    ch = mm_get("/api/v4/channels/#{channel_id}")
+    return false unless ch["type"] == "D"
+    me = mm_get("/api/v4/users/me")["id"]
+    other = ch["name"].to_s.split("__").find { |id| id != me } || me
+    bot_user?(other)
+  end
+
+  def parser_legate_in_thread(root_id)
+    posts = mm_get("/api/v4/posts/#{root_id}/thread")["posts"] || {}
+    hit = posts.values.map { |p| p["user_id"] }.find { |uid| PARSER_LEGATES.key?(uid) }
+    hit && PARSER_LEGATES[hit]
+  end
+
+  # :label, or [:exempt, reason]. Raises LookupError when it cannot tell.
+  def mattermost_verdict(tool, input)
+    message = input["message"].to_s
+    if tool.end_with?("__direct_message")
+      return [:exempt, "dm-bot"] if bot_user?(input["user_id"])
+      return [:exempt, "mention-bot"] if mentions_bot?(message)
+      return :label
+    end
+    channel = input["channel_id"].to_s
+    raise LookupError, "no channel_id" if channel.empty?
+    return [:exempt, "mention-bot"] if mentions_bot?(message)
+    return [:exempt, "dm-bot"] if dm_with_bot?(channel)
+    root = input["root_id"].to_s
+    unless root.empty?
+      who = parser_legate_in_thread(root)
+      return [:exempt, "thread-#{who.downcase}"] if who
+    end
+    :label
+  end
+
+  # ---- gh ------------------------------------------------------------------
+
+  GH = /\bgh\s+(?:pr\s+(?:create|comment|review)|issue\s+(?:create|comment))\b/
+  BODY_FLAG = /(?:\s|^)(?:--body|-b|--body-file|-F)(?:[\s=]|$)/
+  BODY_FILE = /(?:--body-file|-F)[\s=]+(?:"([^"]+)"|'([^']+)'|(\S+))/
+
+  def gh_needs_label?(command)
+    return false unless GH.match?(command)
+    return false if labelled?(command)
+    file = command.scan(BODY_FILE).map(&:compact).flatten.first
+    return false if file && File.file?(File.expand_path(file)) && labelled?(File.read(File.expand_path(file)))
+    # gh pr review --approve with no body posts no text of Val's.
+    return false if command =~ /\bgh\s+pr\s+review\b/ && !BODY_FLAG.match?(command)
+    true
+  end
+
+  def gh_reason
+    <<~TEXT
+      This gh call posts as Val. End the body with the agent label on its own line:
+
+      _#{text}_
+
+      (a blank line before it). Put it in --body, or in the --body-file file. Edits
+      (gh pr edit, gh api) are not labelled.
+    TEXT
+  end
+
+  # ---- decisions --------------------------------------------------------------
+
+  # [field, formatter] for tools whose text is relabelled in place.
+  def target(tool, input)
+    case tool
+    when "mcp__mattermost__compose"
+      return nil unless input["post_id"].to_s.empty?
+      ["message", :markdown]
+    when "mcp__mattermost__direct_message" then ["message", :markdown]
+    when "mcp__linear-server__save_comment"
+      input["id"].to_s.empty? ? ["body", :markdown] : nil
+    when "mcp__linear-server__save_issue"
+      input["id"].to_s.empty? ? ["description", :markdown] : nil
+    when "mcp__fizz-mcp__add_comment", "mcp__fizz-mcp__comment_cards" then ["content", :html]
+    when "mcp__fizz-mcp__create_card" then ["description", :html]
+    end
+  end
+
+  # The hook's whole decision as data: nil (do nothing) or a Hash to print.
+  def decide(payload)
+    tool = payload["tool_name"].to_s
+    input = payload["tool_input"].is_a?(Hash) ? payload["tool_input"] : {}
+
+    if tool == "Bash"
+      cmd = input["command"].to_s
+      return nil unless GH.match?(cmd)
+      unless gh_needs_label?(cmd)
+        log(tool, labelled?(cmd) ? "labelled" : "exempt:gh-no-body")
+        return nil
+      end
+      log(tool, "denied:gh-unlabelled")
+      return {"hookSpecificOutput" => {"hookEventName" => "PreToolUse",
+                                       "permissionDecision" => "deny",
+                                       "permissionDecisionReason" => gh_reason}}
+    end
+
+    field, fmt = target(tool, input)
+    unless field
+      log(tool, "exempt:edit") if tool.start_with?("mcp__mattermost__compose", "mcp__linear-server__save_")
+      return nil
+    end
+    if labelled?(input[field])
+      log(tool, "exempt:already-labelled")
+      return nil
+    end
+
+    if tool.start_with?("mcp__mattermost__")
+      begin
+        verdict = mattermost_verdict(tool, input)
+      rescue LookupError => e
+        log(tool, "skipped:#{e.message}")
+        return {"hookSpecificOutput" => {"hookEventName" => "PreToolUse",
+                                         "additionalContext" => "[agent-label] No agent label was added to this post: a Mattermost lookup failed (#{e.message}). Not an error to fix; noted in the label log."}}
+      end
+      if verdict.is_a?(Array)
+        log(tool, "exempt:#{verdict[1]}")
+        return nil
+      end
+    end
+
+    updated = input.merge(field => send(fmt, input[field].to_s))
+    log(tool, "labelled")
+    {"hookSpecificOutput" => {"hookEventName" => "PreToolUse", "updatedInput" => updated}}
+  end
+end
+
+if $PROGRAM_NAME == __FILE__
+  payload = begin
+    JSON.parse($stdin.read.to_s)
+  rescue JSON::ParserError
+    {}
+  end
+  out = AgentLabel.decide(payload)
+  puts JSON.generate(out) if out
+  exit 0
+end
